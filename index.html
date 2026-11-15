@@ -1,0 +1,38 @@
+<!doctype html>
+<!--
+  Statistical Fundamentals, the web version: the page (app.js) and the laboratory in Python (worker.js runs Pyodide).
+  Every text of this page comes from the catalogs (texts.json); written by web/build.py into web/dist/.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10151C">
+<meta name="color-scheme" content="dark">
+<title>Statistical Fundamentals</title>
+<link rel="icon" href="icons/app.svg" type="image/svg+xml">
+<link rel="stylesheet" href="theme.css?v=f365f895a63e">
+<link rel="stylesheet" href="style.css?v=f365f895a63e">
+</head>
+<body data-build="f365f895a63e" data-pyodide="https://cdn.jsdelivr.net/pyodide/v0.29.5/full/" data-version="0.1.0">
+<div id="loading" class="loading" role="status" aria-live="polite">
+  <div class="loading-card">
+    <img class="loading-mark" src="icons/app.svg" alt="" width="40" height="40">
+    <h1 class="loading-title" id="loading-title"></h1>
+    <div class="loading-bar" aria-hidden="true"><div class="loading-fill" id="loading-fill"></div></div>
+    <p class="loading-stage" id="loading-stage"></p>
+    <p class="loading-note" id="loading-note"></p>
+    <p class="loading-error" id="loading-error" hidden></p>
+    <button class="quiet-button" id="loading-retry" type="button" hidden></button>
+  </div>
+</div>
+<div id="app" class="app" hidden>
+  <header class="bar" id="bar"></header>
+  <main class="screen" id="screen"></main>
+</div>
+<div id="tip" class="tip" role="tooltip" hidden></div>
+<div id="toast" class="toast" role="alert" hidden></div>
+<dialog id="dialog" class="dialog"></dialog>
+<script src="app.js?v=f365f895a63e"></script>
+</body>
+</html>
