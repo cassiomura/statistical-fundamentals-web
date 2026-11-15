@@ -26,6 +26,7 @@
     better: [0.38, 3], worse: [0.30, 3], discard: [0.16, 2], achieved: [0.46, 3],
   };
   const THROTTLE = 0.25;                 // seconds: gui/sounds.THROTTLE
+  const TYPING_MS = 350;                 // gui/widgets.NumberField.TYPING_MS: a pause in the typing commits a number in range
   const BUSY_AFTER = 300;                // milliseconds a request may take before the page says it is computing
   const TIP_DELAY = 450;                 // milliseconds the pointer rests before a tooltip shows
   const COLUMN = 312, COLUMN_NARROW = 264, STAGE_INSETS = [20, 10, 20, 0], STAGE_GAP = 4;   // gui/lab_views
@@ -573,7 +574,8 @@
     if (lab.filled) {
       nodes.filled = el("button", { class: "filled", type: "button", onclick: () => {
         const filled = page.view.bench.lab.filled;
-        if (filled && filled.enabled) ask("action", { key: filled.key });
+        const typed = flushTyped();                                 // a number still being typed counts (NumberField.flush)
+        if (filled && (filled.enabled || (typed && filled.forward))) ask("action", { key: filled.key });
         else showTipOf(nodes.filled);
       } });
       foot.append(nodes.filled);
@@ -661,6 +663,10 @@
         } else if (event.key === "Escape") { parts.input.value = valueText(page.nodes.controls[control.key].last.value); parts.input.blur(); }
       });
       parts.input.addEventListener("blur", commit);
+      parts.input.addEventListener("input", () => {                 // a number in range counts once the typing pauses
+        clearTimeout(parts.typing);
+        parts.typing = setTimeout(() => flushOne(control.key), TYPING_MS);
+      });
       const line = el("div", { class: "typed-line" }, el("span", { class: "symbol" }, control.symbol), parts.input);
       if (control.shortcuts) {
         parts.picks = el("div", { class: "segmented picks" });
@@ -699,7 +705,36 @@
     return value === null || value === undefined ? "" : String(value);
   }
 
+  function pendingNumber(key) {
+    const parts = page.nodes.controls[key];
+    const now = parts && parts.last;
+    if (!now || !parts.input) return null;
+    const typed = parts.input.value.trim();
+    if (!/^\d+$/.test(typed)) return null;
+    const number = parseInt(typed, 10);
+    return number >= now.least && number <= now.most && number !== now.value ? number : null;
+  }
+
+  function flushOne(key) {
+    const parts = page.nodes.controls[key];
+    if (parts) clearTimeout(parts.typing);
+    const number = pendingNumber(key);
+    if (number === null) return false;
+    parts.last = Object.assign({}, parts.last, { value: number });
+    ask("control", { key, value: number });
+    return true;
+  }
+
+  function flushTyped() {
+    let any = false;
+    for (const [key, parts] of Object.entries(page.nodes.controls || {})) {
+      if (parts.control.kind === "typed") any = flushOne(key) || any;
+    }
+    return any;
+  }
+
   function commitTyped(key, input) {
+    clearTimeout(page.nodes.controls[key] && page.nodes.controls[key].typing);
     const parts = page.nodes.controls[key];
     const now = parts && parts.last;
     if (!now) return;
@@ -733,6 +768,7 @@
       setTip(nodes.stageName, lab.stage);
     }
     nodes.status.textContent = lab.status;
+    nodes.status.classList.toggle("ok", lab.status_kind === "ok");
     nodes.status.hidden = !lab.status;
     nodes.missing.textContent = lab.missing;
     nodes.missing.hidden = !lab.missing;

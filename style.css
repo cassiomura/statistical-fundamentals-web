@@ -66,7 +66,7 @@ body.busy { cursor: progress; }
 .bar { flex: none; display: flex; align-items: center; gap: 6px; min-height: var(--bar); padding: 4px 8px;
        padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right));
        background: var(--window); border-bottom: 1px solid var(--border); }
-.brand { display: flex; align-items: center; gap: 6px; padding-left: 4px; }
+.brand { display: flex; align-items: center; gap: 6px; padding-left: 4px; min-width: 0; flex: 0 1 auto; }
 .bar-name { font-weight: 600; font-size: 13.5px; white-space: nowrap; padding: 0 8px 0 6px; }
 .bar-name .stars { margin-left: 8px; }
 .bar-spring { flex: 1; min-width: 4px; }
@@ -162,7 +162,7 @@ body.busy { cursor: progress; }
 .stop.done .stop-mark { background: var(--theme-ready); border-color: var(--theme-ready); color: var(--on-accent); }
 .stop.current .stop-mark { border-color: var(--accent); box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent); }
 .stop.locked .stop-mark { border-style: dashed; border-color: var(--disabled); }
-.stop-name { font-size: 12px; color: var(--prose); }
+.stop-name { font-size: 12px; color: var(--prose); white-space: nowrap; }
 .stop.locked .stop-name { color: var(--disabled); }
 .track-worth { font-size: 11px; color: var(--muted); }
 .track-worth.kind-error { color: color-mix(in srgb, var(--error) 55%, var(--muted)); }
@@ -227,6 +227,7 @@ body.busy { cursor: progress; }
 .chip:disabled { color: var(--disabled); background: transparent; cursor: default; }
 .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .status { color: var(--warning); font-size: 12.5px; margin: 0; }
+.status.ok { color: var(--ok); }
 .missing { color: var(--muted); font-size: 12px; margin: 0; }
 .filled { min-height: 44px; padding: 8px 16px; border-radius: 22px; border: 2px solid var(--accent); background: var(--accent);
           color: var(--on-accent); font-size: 16px; font-weight: 700; }
@@ -359,15 +360,19 @@ body.busy .busy-note { opacity: 0.95; }
   .lede { flex: none; min-width: 0; }
   .cover-title { font-size: 31px; }
   .journey::before { left: 21px; }
-  .bench-card { flex-wrap: wrap; gap: 12px; padding: 14px 14px 14px 0; }
-  .bench-card > .node { width: 44px; }
+  .bench-card { display: grid; grid-template-columns: 44px 96px minmax(0, 1fr); align-items: start; gap: 6px 12px;
+                grid-template-areas: "node picture name" "node picture challenge" "node track track"; padding: 14px 14px 14px 0; }
+  .bench-card > .node { width: 44px; grid-area: node; align-self: center; }
   .bench-card::after { left: 44px; }
-  .bench-card .picture { width: 96px; height: 96px; }
-  .card-texts { flex-basis: calc(100% - 170px); }
-  .track { margin-top: 4px; }
+  .bench-card .picture { width: 96px; height: 96px; margin: 0; grid-area: picture; }
+  .card-texts { display: contents; }
+  .card-name { grid-area: name; font-size: 18px; }
+  .challenge { grid-area: challenge; font-size: 13px; }
+  .track { grid-area: track; margin-top: 4px; }
+  .card-lock { position: absolute; top: 14px; right: 14px; }
   .track { width: 100%; }
   .stop { width: auto; flex: 1 1 0; min-width: 0; }
-  .stop-name { font-size: 11px; overflow-wrap: anywhere; }
+  .stop-name { font-size: 11.5px; white-space: nowrap; }
   .arrow { display: none; }
 }
 .bench.portrait { flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }

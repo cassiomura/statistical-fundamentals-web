@@ -11,7 +11,7 @@
 <meta name="color-scheme" content="dark">
 <title>Statistical Fundamentals</title>
 <link rel="icon" href="icons/app.svg" type="image/svg+xml">
-<link rel="stylesheet" href="theme.css?v=f365f895a63e">
+<link rel="stylesheet" href="theme.css?v=51cb44a4910d">
 <style>
   html, body { height: 100%; margin: 0; }
   body { display: grid; place-items: center; background: var(--theme-deep); color: var(--theme-text);
@@ -44,7 +44,7 @@
     if (kept.language === "en" || kept.language === "pt_BR") language = kept.language;
     else if ((navigator.language || "").toLowerCase().startsWith("pt")) language = "pt_BR";
   } catch (error) { /* nothing kept */ }
-  fetch("texts.json?v=f365f895a63e").then((response) => response.json()).then((catalogs) => {
+  fetch("texts.json?v=51cb44a4910d").then((response) => response.json()).then((catalogs) => {
     const text = (key, params) => {
       let found = (catalogs[language] || {})[key] ?? catalogs.en[key] ?? "[" + key + "]";
       if (params) found = found.replace(/\{(\w*)\}/g, (whole, name) => (name in params ? String(params[name]) : whole));
