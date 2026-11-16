@@ -2,7 +2,9 @@
  * Statistical Fundamentals, the web version: the look of the page, the desktop's (gui/style.py, gui/cover.py): the
  * product's slate and cyan, the hues of manim one meaning each, surfaces told apart by tone, generous spacing, a value's
  * state in one colour and weight wherever it is shown (KIND_INKS). The colours are theme.css's custom properties,
- * written by web/build.py from fundamentals_ui/theme.py and palette.py: none is defined here.
+ * written by web/build.py from fundamentals_ui/theme.py and palette.py: none is defined here. A bench on a phone is
+ * `.bench.dense` (the dock, the foot, the sheet, the measures, shared), `.portrait` or `.compact` (landscape) for where
+ * they stand; its bar is `.bar.in-bench.phone`; touch targets are 44 px, 8 px apart.
  */
 :root {
   --window: var(--theme-deep);
@@ -30,6 +32,7 @@
   --column: 312px;
   --inset: 20px;
   --bar: 48px;
+  --command-radius: 8px;                 /* gui/style.COMMAND_RADIUS: the column's commands are rectangles, as CAE's */
 }
 
 * { box-sizing: border-box; }
@@ -111,17 +114,25 @@ body.busy { cursor: progress; }
 .segment.checked { background: var(--pill); color: var(--text); }
 .segment.locked { color: var(--disabled); cursor: default; }
 .segment-lock:empty { display: none; }
+.segment-text { display: inline-flex; align-items: center; gap: 5px; }       /* the name, then its padlock (style.LOCK_GAP) */
+.segment-lock { display: inline-flex; }
+/* an icon drawn with a name (gui/marks.py, style.MARK_SIZE / MARK_GAP): in the text's colour, in every state */
+.icon.mark { width: 16px; height: 16px; }
+.segment .icon.mark { margin-right: 1px; }
 .quiet-button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 12px; color: var(--muted);
                 background: transparent; border: 1px solid transparent; border-radius: 12px; text-decoration: none; }
 .quiet-button:hover { color: var(--text); background: var(--hover); }
-.primary-small { min-height: 40px; padding: 6px 18px; border: none; border-radius: 20px; background: var(--accent); color: var(--on-accent);
+.primary-small { min-height: 40px; padding: 6px 18px; border: none; border-radius: var(--command-radius); background: var(--accent); color: var(--on-accent);
                  font-weight: 700; }
-.danger-button { min-height: 40px; padding: 6px 18px; border: 1px solid var(--error); border-radius: 20px; background: transparent;
+.danger-button { min-height: 40px; padding: 6px 18px; border: 1px solid var(--error); border-radius: var(--command-radius); background: transparent;
                  color: var(--error); font-weight: 600; }
+.primary-small:hover { background: var(--accent-hover); }
+.danger-button:hover { background: color-mix(in srgb, var(--error) 14%, transparent); }
 
 /* ------------------------------------------------------------------ the cover (gui/cover.py) */
-.cover { flex: 1; overflow-y: auto; background: var(--surface); display: flex; gap: 56px; justify-content: center;
+.cover { flex: 1; overflow-y: auto; background: var(--surface); display: flex;
          padding: 40px max(24px, env(safe-area-inset-right)) 40px max(24px, env(safe-area-inset-left)); }
+.cover-inner { flex: 1; min-width: 0; display: flex; gap: 56px; justify-content: center; margin: auto; }
 .lede { flex: 0 1 380px; min-width: 300px; display: flex; flex-direction: column; align-items: flex-start; padding-top: 12px; }
 .mode-line { color: var(--muted); margin: 10px 0 22px; font-size: 13px; }
 .purpose { color: var(--accent); margin: 0 0 6px; font-size: 15px; }
@@ -169,6 +180,27 @@ body.busy { cursor: progress; }
 .track-worth.kind-warning { color: color-mix(in srgb, var(--warning) 55%, var(--muted)); }
 .track-worth.kind-ok { color: color-mix(in srgb, var(--ok) 55%, var(--muted)); }
 .track-line { flex: none; width: 0; }
+/* the cover in a desktop's window (app.js, arrangeCover; gui/cover.CoverView.arrange): the title's column and the journey
+   within 1240 px, centred; the journey in the middle of the screen, its cards sharing the screen's height (--row), a taller
+   card with a larger picture (--picture) and larger texts (--type); the title a little above the cards' middle (--lede-top);
+   the thread from the first node to the last */
+.cover.arranged { padding: 32px 36px; }
+.cover.arranged .cover-inner { flex: 1 1 auto; max-width: 1240px; margin: 0 auto; align-items: flex-start; }
+.cover.arranged .lede { flex: none; width: var(--lede); min-width: 0; padding-top: var(--lede-top); }
+.cover.arranged .cover-title { font-size: clamp(34px, calc(var(--lede) * 0.13), 50px); }
+.cover.arranged .lead { font-size: 16px; }
+.cover.arranged .journey { flex: none; width: var(--path); margin-block: auto; gap: 14px; }
+.cover.arranged .journey::before { top: calc(var(--row) / 2); bottom: calc(var(--row) / 2); }
+.cover.arranged .bench-card { min-height: var(--row); padding: 11px 22px 11px 0; }
+.cover.arranged .bench-card .picture { width: var(--picture); height: var(--picture); margin: 0; }
+.cover.arranged .card-texts { gap: calc(6px * var(--type)); }
+.cover.arranged .card-name { font-size: calc(19px * var(--type)); }
+.cover.arranged .challenge { font-size: calc(13.5px * var(--type)); }
+.cover.arranged .track { margin-top: calc(8px * var(--type)); }
+.cover.arranged .stop { width: calc(96px * var(--type)); }
+.cover.arranged .stop-mark { width: calc(17px * var(--type)); height: calc(17px * var(--type)); border-radius: 50%; }
+.cover.arranged .stop-name { font-size: calc(12px * var(--type)); }
+.cover.arranged .track-worth { font-size: calc(11px * var(--type)); }
 
 /* ------------------------------------------------------------------ a bench: the workbench (gui/lab_views.py) */
 .bench { flex: 1; min-width: 0; min-height: 0; display: flex; background: var(--card); position: relative; }
@@ -191,10 +223,18 @@ body.busy { cursor: progress; }
 .control-label { color: var(--muted); font-size: 12.5px; font-weight: 600; }
 .column-segmented { display: flex; flex-wrap: wrap; align-self: flex-start; max-width: 100%; }
 .column-segmented .segment { flex: 1 0 auto; }
+/* options with icons (lab_views.ColumnSegmented): as wide as the column; icons beside the names while the row holds
+   every option so, over them otherwise (.over), one option under another only when even that is too wide (.stacked) */
+.column-segmented.marked { align-self: stretch; }
+.column-segmented.marked .segment { gap: 6px; }
+.column-segmented.marked.over .segment { flex-direction: column; gap: 2px; padding: 5px 8px 4px; }
+.column-segmented.marked.stacked { flex-direction: column; flex-wrap: nowrap; }
+.column-segmented.marked.stacked .segment { justify-content: flex-start; }
+.picks-line { display: flex; }
 .control-line { color: var(--muted); font-size: 12px; min-height: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .typed-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .symbol { font-family: var(--number-face); font-style: italic; font-size: 17px; }
-.number { width: 64px; min-height: 36px; padding: 3px 8px; font-family: var(--number-face); font-size: 15.5px; color: var(--text);
+.number { width: 64px; min-height: 36px; padding: 3px 8px; font-family: var(--number-face); font-size: 15.5px; color: var(--text); text-align: right;
           background: var(--window); border: 1px solid var(--theme-field-border); border-radius: 6px; }
 .number:hover { border-color: var(--muted); }
 .number:focus { border-color: var(--accent); outline: none; }
@@ -204,33 +244,41 @@ body.busy { cursor: progress; }
 .slider { flex: 1; min-width: 0; height: 28px; accent-color: var(--accent); background: transparent; }
 .check { display: flex; align-items: center; gap: 8px; }
 .featured { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 52px; padding: 8px 14px;
-            text-align: left; background: transparent; border: 1px solid var(--accent); border-radius: 10px; }
+            text-align: left; background: transparent; border: 1px solid var(--accent); border-radius: var(--command-radius); }
 .featured:hover { background: var(--hover); }
+.featured:focus-visible { outline: none; border-width: 2px; padding: 7px 13px; }
 .featured:active { background: var(--pressed); }
 .featured:disabled { border-color: var(--pill); }
-.featured-title { color: var(--accent); font-size: 14px; font-weight: 600; }
+.featured-title { color: var(--accent); font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
 .featured:disabled .featured-title { color: var(--disabled); }
 .featured-detail { color: var(--muted); font-size: 12px; min-height: 1.3em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .transport { display: flex; flex-direction: column; gap: 6px; }
 .transport-icons { display: flex; gap: 8px; }
-.transport-button { width: 40px; height: 40px; border-radius: 20px; display: grid; place-items: center; background: var(--track);
+.transport-button { width: 40px; height: 40px; border-radius: var(--command-radius); display: grid; place-items: center; background: var(--track);
                     border: 1px solid var(--track); color: var(--text); padding: 0; }
-.transport-button:hover { background: var(--hover); }
+.transport-button:hover { background: var(--hover); border-color: var(--hover); }
+.transport-button:focus-visible { outline: none; border-color: var(--accent); }
 .transport-button:active { background: var(--pressed); }
-.transport-button:disabled { background: transparent; color: var(--disabled); cursor: default; }
+.transport-button:disabled { background: transparent; border-color: var(--track); color: var(--disabled); cursor: default; }
 .stage-name { color: var(--muted); font-size: 12px; min-height: 1.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chips { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 .chips:empty { display: none; }
-.chip { min-height: 40px; padding: 6px 18px; border-radius: 20px; background: var(--track); border: 1px solid var(--track); color: var(--prose);
+.chip { min-height: 40px; padding: 6px 18px; border-radius: var(--command-radius); background: var(--track); border: 1px solid var(--track); color: var(--prose);
         font-size: 14px; }
+.chip { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.chip.beside { flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 4px 12px; }
+.chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip:hover { color: var(--text); background: var(--hover); }
+.chip:active { background: var(--pressed); }
+.chip:focus-visible { outline: none; border-color: var(--accent); }
 .chip:disabled { color: var(--disabled); background: transparent; cursor: default; }
 .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .status { color: var(--warning); font-size: 12.5px; margin: 0; }
 .status.ok { color: var(--ok); }
 .missing { color: var(--muted); font-size: 12px; margin: 0; }
-.filled { min-height: 44px; padding: 8px 16px; border-radius: 22px; border: 2px solid var(--accent); background: var(--accent);
-          color: var(--on-accent); font-size: 16px; font-weight: 700; }
+.filled { min-height: 44px; padding: 8px 16px; border-radius: var(--command-radius); border: 2px solid var(--accent); background: var(--accent);
+          color: var(--on-accent); font-size: 16px; font-weight: 600; }
+.filled:focus-visible { outline: none; border-color: var(--text); }
 .filled:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .filled:active { background: var(--muted); border-color: var(--muted); }
 .filled[aria-pressed="true"] { background: var(--accent-hover); border-color: var(--text); }
@@ -243,6 +291,7 @@ body.busy { cursor: progress; }
          padding: 10px 20px 0 20px; display: flex; flex-direction: column; gap: 4px; }
 .figure-box { position: relative; flex: none; }
 .figure { display: block; touch-action: none; outline-offset: -2px; }
+.figure.pointed:focus-visible { outline: none; }
 .figure[data-panel="third"] { touch-action: pan-y; }
 .alert { position: absolute; top: 6px; right: 10px; max-width: 70%; padding: 4px 12px; border-radius: 11px; font-size: 12px;
          color: var(--prose); background: var(--track); }
@@ -258,6 +307,7 @@ body.busy .busy-note { opacity: 0.95; }
 .metric-title { color: var(--muted); font-size: 12px; display: flex; gap: 6px; align-items: baseline; }
 .metric-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .metric-value { font-size: 18.5px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.metric.strong .metric-value { font-size: 22.5px; font-weight: 700; line-height: 1.1; }   /* Metric.strong (style.STRONG_POINTS) */
 .metric-detail { color: var(--muted); font-size: 13px; }
 .kind-error { color: var(--error); font-weight: 700; }
 .kind-warning { color: var(--warning); font-weight: 700; }
@@ -272,9 +322,6 @@ body.busy .busy-note { opacity: 0.95; }
 .lab-table th { color: var(--palette-grey); font-weight: 400; }
 .lab-table tr.chosen { background: var(--pill); }
 .panel-switch { align-self: center; margin: 4px 0 6px; }
-.column-toggle { position: absolute; z-index: 3; left: calc(var(--column) + 4px); top: 10px; width: 32px; height: 32px; border-radius: 16px;
-                 border: 1px solid var(--border); background: var(--raised); color: var(--text); font-size: 18px; line-height: 1; padding: 0; }
-.bench.collapsed .column-toggle { left: 8px; }
 
 /* ------------------------------------------------------------------ View code (gui/widgets.CodePanel) */
 .code-panel { flex: none; width: min(560px, 42vw); min-height: 0; display: flex; flex-direction: column; background: var(--surface);
@@ -321,19 +368,7 @@ body.busy .busy-note { opacity: 0.95; }
          background: var(--raised); border: 1px solid var(--warning); border-radius: 10px; }
 .toast pre { white-space: pre-wrap; font-size: 11.5px; color: var(--muted); }
 
-/* ------------------------------------------------------------------ a narrow or short window: a phone in landscape */
-.bench.compact { --column: 264px; --inset: 14px; }
-.bench.compact .card-slot { height: auto; }
-.bench.compact .lab-title { font-size: 15.5px; }
-.bench.compact.collapsed .column { display: none; }
-.bench.compact .stage { padding-left: 14px; padding-right: 14px; }
-.bench.compact .stage { padding-left: 42px; }
-@media (max-height: 560px) {
-  .bench.compact .column { overflow-y: auto; }
-  .bench.compact .column-body { flex: none; overflow: visible; }
-  .bench.compact .column-foot { position: sticky; bottom: 0; background: var(--surface); border-top: 1px solid var(--border); }
-  .bench.compact .card-row { font-size: 12px; }
-}
+/* ------------------------------------------------------------------ the bar on a phone (and a short or narrow window) */
 @media (max-width: 1180px) {
   .pill-name { display: none; }
   .pill-short { display: inline; }
@@ -343,17 +378,55 @@ body.busy .busy-note { opacity: 0.95; }
   .pill { padding-right: 9px; }
   .connector { width: 12px; }
 }
+/* inside a bench, one row of 44 px targets: Home, the bench's name over its stars, the pills (the current one named,
+   the others their mark), in landscape the panel switch, "i" and View code (app.js: barTools), sound; no language box */
+.bar.in-bench.phone { gap: 2px; min-height: 0; padding: env(safe-area-inset-top) max(4px, env(safe-area-inset-right)) 0
+                      max(4px, env(safe-area-inset-left)); }
+.bar.in-bench.phone .language { display: none; }
+.bar.in-bench.phone .bar-spring { flex: 1 1 0; min-width: 0; }
+.bar.in-bench.phone .home { flex: none; min-width: 44px; min-height: 44px; padding: 0; justify-content: center; }
+.bar.in-bench.phone .home-word { display: none; }
+.bar.in-bench.phone .bar-icon { flex: none; width: 44px; height: 44px; }
+.bar.in-bench.phone .bench-name { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center;
+                                  padding: 0 2px; line-height: 1.2; overflow: hidden; }
+.bar.in-bench.phone .bench-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar.in-bench.phone .bench-name .stars { margin-left: 0; font-size: 11px; }
+.bar.in-bench.phone .pills { flex: none; gap: 8px; }
+.bar.in-bench.phone .connector { display: none; }
+.bar.in-bench.phone .pill { min-height: 44px; }
+.bar.in-bench.phone .pill:not(.current) { width: 44px; padding: 0; justify-content: center; border-color: transparent; }
+.bar.in-bench.phone .pill.current { padding: 4px 9px 4px 6px; gap: 5px; }
+.bar.in-bench.phone .pill-name, .bar.in-bench.phone .pill-short { display: none; }
+.bar.in-bench.phone .pill.current .pill-short { display: inline; white-space: nowrap; font-size: 13px; }
+.bar-tools { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; margin: 0 2px; }
+.bar-tools .panel-switch { flex: 0 1 auto; min-width: 0; margin: 0; padding: 0; display: flex; }
+.bar-tools .panel-switch .segment { flex: 0 1 auto; min-width: 44px; min-height: 44px; padding: 2px 9px; font-size: 12px;
+                                    white-space: normal; line-height: 1.15; text-align: center; }
+@media (max-width: 720px) and (orientation: landscape) {
+  .bar.in-bench.phone .pill.current .pill-mark { display: none; }    /* the room goes to the panel switch: the step is named */
+  .bar.in-bench.phone .pill.current { padding-left: 10px; }
+  .bar-tools .panel-switch .segment { padding: 2px 6px; }
+}
+@media (max-width: 379px) and (orientation: portrait) {
+  .bar.in-bench.phone .pill.current { padding-left: 10px; }
+  .bar.in-bench.phone .pill.current .pill-mark { display: none; }    /* the bench's name keeps the room: the step is named */
+}
 
-/* ------------------------------------------------------------------ a phone in portrait */
+/* ------------------------------------------------------------------ the cover too narrow for the title beside the journey
+   (app.js arrangementOf: under 1000 px, a phone in landscape): the title above the journey, as gui/cover.py under WIDE */
+@media (max-width: 999px) and (orientation: landscape) {
+  .cover { display: block; }
+  .cover-inner { flex-direction: column; justify-content: flex-start; gap: 22px; margin: 0 auto; max-width: 860px; }
+  .lede { flex: none; min-width: 0; padding-top: 0; }
+  .journey { flex: none; }
+  .restart[style*="hidden"] { display: none; }
+}
+
+/* ------------------------------------------------------------------ the cover on a phone in portrait */
 @media (max-width: 899px) and (orientation: portrait) {
-  .bar { flex-wrap: wrap; gap: 2px 4px; padding-top: max(4px, env(safe-area-inset-top)); }
-  .bar .pills { order: 10; flex-basis: 100%; justify-content: center; padding: 2px 0 4px; }
-  .bar .bar-spring:last-of-type { display: none; }
-  .pill { min-height: 40px; }
-  .pill-short { display: none; }
-  .pill.current .pill-short { display: inline; }
-  .cover { flex-direction: column; justify-content: flex-start; gap: 22px; padding: 22px 16px 32px; }
-  .bar:not(:has(.pills)) { flex-wrap: nowrap; }
+  .bar { padding-top: max(4px, env(safe-area-inset-top)); }
+  .cover { display: block; padding: 22px 16px 32px; }
+  .cover-inner { flex-direction: column; justify-content: flex-start; gap: 22px; margin: 0; }
   .bar-name { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .language { max-width: 108px; }
   .restart[style*="hidden"] { display: none; }
@@ -375,26 +448,136 @@ body.busy .busy-note { opacity: 0.95; }
   .stop-name { font-size: 11.5px; white-space: nowrap; }
   .arrow { display: none; }
 }
-.bench.portrait { flex-direction: column; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
-.bench.portrait .column { display: contents; }
-.bench.portrait .stage { order: 1; flex: none; overflow: visible; padding: 4px 12px 0; }
-.bench.portrait .column-head { order: 2; background: var(--surface); padding: 14px 16px 0; }
-.bench.portrait .column-body { order: 3; flex: none; overflow: visible; background: var(--surface); padding: 12px 16px 16px; }
-.bench.portrait .column-foot { order: 4; position: sticky; bottom: 0; z-index: 5; background: var(--surface); border-top: 1px solid var(--border);
-                               flex-direction: row; flex-wrap: wrap; align-items: center; padding: 8px 12px max(8px, env(safe-area-inset-bottom));
-                               box-shadow: 0 -8px 18px rgba(0, 0, 0, 0.35); }
-.bench.portrait .column-foot > .status, .bench.portrait .column-foot > .missing { flex-basis: 100%; margin-left: 4px; }
-.bench.portrait .column-foot > .filled { flex: 1; margin-left: 0; }
-.bench.portrait .card-slot { height: auto; }
-.bench.portrait .strip { flex-direction: column; align-items: stretch; padding-bottom: 8px; }
-.bench.portrait .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 0; }
-.bench.portrait .metric { padding: 4px 8px; }
-.bench.portrait .metric-value { font-size: 16.5px; white-space: normal; }
-.bench.portrait .strip-end { justify-content: flex-end; }
+
+/* ------------------------------------------------------------------ a bench on a phone: dense (app.js: the pieces shared) */
+/* the dock: the column's controls in rows of 44 px, a label beside its control where both fit on the row (flex-wrap
+   puts the control under it otherwise), the only scroller; the card a sheet over it */
+.dock-slot { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; background: var(--surface); }
+.bench.dense .dock { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; gap: 6px;
+                     padding: 8px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left)); }
+.bench.dense .dock.more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+                          mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); }
+.bench.dense.said .dock { padding-bottom: 56px; }                    /* the foot's line lies over the dock's lower edge */
+.bench.dense .control { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 0; }
+.bench.dense .control-label { flex: 0 1 auto; min-width: 0; max-width: 100%; font-size: 12px; white-space: nowrap; overflow: hidden;
+                              text-overflow: ellipsis; }
+.bench.dense .column-segmented { flex: 1 0 auto; max-width: 100%; padding: 0; }
+.bench.dense .picks { padding: 0; }
+.bench.dense .column-segmented .segment, .bench.dense .picks .segment { min-height: 44px; min-width: 44px; padding: 4px 10px; }
+.bench.dense .typed-line { flex: 1 1 auto; min-width: 0; flex-wrap: wrap; gap: 8px; }
+.bench.dense .number { width: 76px; min-height: 44px; font-size: 16px; }
+.bench.dense .chip.beside { min-height: 44px; flex: 1 1 120px; }
+.bench.dense .picks-line { flex: 1 0 100%; }
+.bench.dense .column-segmented.marked { flex: 1 0 100%; }
+.bench.dense .column-segmented.marked .segment { min-height: 44px; }
+.bench.dense .slider-line { flex: 1 1 170px; min-width: 0; gap: 8px; }
+.bench.dense .slider-value { min-width: 0; font-size: 14px; }
+.bench.dense .slider { min-width: 90px; height: 44px; touch-action: none; }
+.bench.dense .control-line { flex: 1 0 100%; min-height: 0; }
+.bench.dense .control-line:empty { display: none; }
+.bench.dense .check { min-height: 44px; }
+.bench.dense .check input { width: 22px; height: 22px; }
+.bench.dense .featured { min-height: 48px; padding: 4px 14px; }
+.bench.dense .transport { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0 10px; }
+.bench.dense .transport .stage-name { flex: 1 1 120px; min-width: 0; }
+.bench.dense .transport-button { width: 44px; height: 44px; }
+.bench.dense .chips { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+.bench.dense .chip { flex: 1 1 auto; min-height: 44px; }
+.sheet { position: absolute; inset: 0; z-index: 6; overflow-y: auto; overscroll-behavior: contain; background: var(--surface);
+         padding: 4px max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
+         box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35); }
+.sheet:focus { outline: none; }
+.sheet-head { display: flex; align-items: center; gap: 8px; }
+.sheet-head .lab-title { flex: 1; min-width: 0; margin: 0; font-size: 15.5px; }
+/* "i" and View code, 44 px, 8 px apart */
+.phone-tools { flex: none; display: flex; gap: 8px; }
+.phone-icon { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: none; border-radius: 10px;
+              background: transparent; color: var(--muted); font-size: 15px; }
+.phone-icon:hover { color: var(--text); background: var(--hover); }
+.phone-icon[aria-expanded="true"] { color: var(--accent); background: var(--theme-selected); }
+.info-glyph { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center;
+              font-family: var(--number-face); font-style: italic; font-weight: 700; font-size: 14px; line-height: 1; }
+/* the foot: one row (the filled button, Restore as its icon); the status or the missing line over it only while it says
+   something, in up to two lines over the dock's lower edge (a tap shows the whole): the figure's box never moves */
+.bench.dense .column-foot { position: relative; flex: none; gap: 0; background: var(--surface); border-top: 1px solid var(--border);
+                            padding: 4px max(12px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom))
+                                     max(12px, env(safe-area-inset-left)); }
+.foot-line { display: none; }
+.bench.dense.said .foot-line { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+                               position: absolute; z-index: 5; left: 0; right: 0; bottom: 100%; min-height: 44px;
+                               padding: 7px max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+                               font-size: 12px; line-height: 15px; background: var(--surface); border-top: 1px solid var(--border);
+                               border-bottom: 7px solid var(--surface); }   /* a border, not padding: a third line stays clipped */
+.foot-line > p { display: inline; margin: 0; }
+.foot-row { display: flex; align-items: center; gap: 8px; }
+.foot-row > .filled { flex: 1; min-width: 0; min-height: 48px; padding: 4px 14px; font-size: 15px; line-height: 1.15; overflow: hidden; }
+.foot-row > .restore { flex: none; min-height: 48px; min-width: 48px; justify-content: center; }
+.foot-row > .restore > span:not(.icon) { display: none; }
+.foot-row > .restore .icon.small { width: 18px; height: 18px; }
+/* the measures: one line that scrolls sideways, each its title over its value; a tap shows its definition */
+.bench.dense .strip { flex: none; height: 44px; padding: 0; align-items: stretch; background: var(--card); }
+.bench.dense .metrics { flex: 1; min-width: 0; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain;
+                        scrollbar-width: none; align-items: center; }
+.bench.dense .metrics::-webkit-scrollbar { display: none; }
+.bench.dense .metrics.more { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+                             mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent); }
+.bench.dense .metric { flex: none; min-height: 44px; padding: 2px 10px; display: flex; flex-direction: column; justify-content: center; }
+.bench.dense .metric-title { font-size: 11.5px; white-space: nowrap; }
+.bench.dense .metric-line { flex-wrap: nowrap; gap: 6px; }
+.bench.dense .metric-value { font-size: 15.5px; }
+.bench.dense .metric.strong .metric-value { font-size: 18px; line-height: 1.1; }
+.bench.dense .metric-detail { font-size: 12px; white-space: nowrap; }
+.bench.dense .figure-box { display: flex; align-items: center; justify-content: center; overflow: hidden; }
+/* the 3D view or the third panel taller than the box (bridge SCROLLED): drawn as wide as the box, scrolled in it, a
+   vertical drag scrolls (the 3D view turns by a drag across), the lower edge fading while more lies under it */
+.bench.dense .figure-box.scrolls { align-items: flex-start; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+.bench.dense .figure-box.scrolls .figure { touch-action: pan-y; }
+.bench.dense .figure-box.scrolls.more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+                                        mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent); }
+.bench.dense .alert { max-width: 92%; right: 4px; top: 4px; font-size: 11.5px; }
+.bench.dense .code-panel { position: fixed; inset: 0; height: auto; z-index: 30; }
+.bench.dense .code-close { width: 44px; height: 44px; }
+.bench.dense button, .bench.dense .control-label, .bench.dense .metric, .foot-line, .bar.in-bench {
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+
+/* a phone in portrait: one screen that never scrolls as a page (app.js, phoneBench): the switch's row, the figure's box,
+   the strip on one line, the dock, the foot; the heights here are app.js's PHONE_* */
+.bench.portrait { flex-direction: column; overflow: hidden; overscroll-behavior: none; }
+.bench.portrait .phone-row { flex: none; height: 44px; display: flex; align-items: center; gap: 8px; background: var(--card);
+                             padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)); }
+.bench.portrait .panel-switch { flex: 1 1 auto; min-width: 0; margin: 0; padding: 0; align-self: center; display: flex; }
+.bench.portrait .panel-switch .segment { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 2px 6px; white-space: normal;
+                                         line-height: 1.15; text-align: center; }
+.bench.portrait .phone-tools { margin-left: auto; }
+.bench.portrait .stage { flex: none; overflow: hidden; gap: 0;
+                         padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)); }
 .bench.portrait .figure-box { width: 100%; }
-.bench.portrait .alert { position: static; display: inline-block; margin: 6px 0 0; max-width: 100%; }
-.bench.portrait .column-segmented { width: 100%; }
-.bench.portrait .code-panel { position: fixed; inset: 0; height: auto; z-index: 30; }
+.bench.portrait .metrics { padding: 0 max(4px, env(safe-area-inset-right)) 0 max(4px, env(safe-area-inset-left)); }
+.bench.portrait .dock-slot { border-top: 1px solid var(--border); }
+
+/* a phone in landscape, and any short or narrow window (app.js, landscapeBench): the column at the left (the dock and
+   its foot), the stage beside it that never scrolls: the figure fitted to its height, the measures at its side (beside)
+   or in a line under it; the stage's padding is app.js's LANDSCAPE_PAD, the column's width its landscapeColumn() */
+.bench.compact { --column: clamp(244px, 36vw, 300px); overflow: hidden; }
+.bench.compact .column { width: var(--column); overflow: hidden; }
+.bench.compact .dock { padding: 8px 12px 12px max(12px, env(safe-area-inset-left)); }
+.bench.compact .column-foot { padding: 4px 12px max(4px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+.bench.compact.said .foot-line { padding: 7px 12px 0 max(12px, env(safe-area-inset-left)); }
+.bench.compact .stage { overflow: hidden; gap: 8px; align-items: center; justify-content: center;
+                        padding: 6px max(12px, env(safe-area-inset-right)) 6px 12px; }
+.bench.compact .stage.beside { flex-direction: row; }
+.bench.compact .figure-box { flex: none; }
+.bench.compact .strip { align-self: stretch; border-top: 1px solid var(--track); }
+.bench.compact .stage.beside .strip { align-self: center; flex: none; min-width: 150px; height: auto; max-height: 100%;
+                                      border-top: none; border-left: 1px solid var(--track); }
+.bench.compact .stage.beside .metrics { flex-direction: column; align-items: stretch; overflow-x: hidden; overflow-y: auto; row-gap: 4px; }
+.bench.compact .stage.beside .metrics.more { -webkit-mask-image: none; mask-image: none; }
+.bench.compact .stage.beside .metric { min-height: 44px; }
+.bench.compact .stage.beside .metric-title, .bench.compact .stage.beside .metric-detail { white-space: normal; }
+.bench.compact .stage.beside .metric-line { flex-wrap: wrap; }
+@media (pointer: coarse) {
+  .number { font-size: 16px; }           /* iOS zooms the page into a field typed in under 16 px */
+}
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }

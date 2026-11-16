@@ -53,8 +53,11 @@
   --palette-grey: #8A939C;
   --palette-hover: #28323C;
   --palette-lift: #1F2734;
+  --palette-muted: #AAB8C8;
+  --palette-panel: #202833;
   --palette-pill: #36424F;
   --palette-pressed: #303B47;
+  --palette-prose: #D5DDE6;
   --palette-purple: #9A72AC;
   --palette-red: #FC6255;
   --palette-slate: #C3CCD5;
