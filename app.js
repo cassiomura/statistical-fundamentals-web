@@ -33,6 +33,7 @@
   const STACK_WIDTH = 620;               // explorers/panels.STACK_WIDTH: a narrower figure stacks its panels
   const CODE_SIDE = 1200;                // the code panel beside the bench from this width (gui/main_window.SIDE_BY_SIDE_WIDTH)
   const QR_LIBRARY = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+  const QR_INTEGRITY = "sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==";
   const STAGES = ["python", "numpy", "matplotlib", "app", "cover"];
 
   // ---------------------------------------------------------------- texts
@@ -462,7 +463,7 @@
     if (window.QRCode) return Promise.resolve();
     if (!qrLoading) {
       qrLoading = new Promise((resolve, reject) => {
-        const script = el("script", { src: QR_LIBRARY, crossorigin: "anonymous", referrerpolicy: "no-referrer" });
+        const script = el("script", { src: QR_LIBRARY, integrity: QR_INTEGRITY, crossorigin: "anonymous", referrerpolicy: "no-referrer" });
         script.onload = resolve;
         script.onerror = () => { qrLoading = null; reject(new Error(QR_LIBRARY)); };
         document.head.append(script);

@@ -11,7 +11,7 @@
 <meta name="color-scheme" content="dark">
 <title>Statistical Fundamentals</title>
 <link rel="icon" href="icons/app.svg" type="image/svg+xml">
-<link rel="stylesheet" href="theme.css?v=51cb44a4910d">
+<link rel="stylesheet" href="theme.css?v=e6bcaffaa542">
 <style>
   html, body { height: 100%; margin: 0; }
   body { display: grid; place-items: center; background: var(--theme-deep); color: var(--theme-text);
@@ -33,7 +33,7 @@
   <div class="address" id="address"></div>
   <a href="./" id="back"></a>
 </main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 "use strict";
 (() => {
@@ -44,7 +44,7 @@
     if (kept.language === "en" || kept.language === "pt_BR") language = kept.language;
     else if ((navigator.language || "").toLowerCase().startsWith("pt")) language = "pt_BR";
   } catch (error) { /* nothing kept */ }
-  fetch("texts.json?v=51cb44a4910d").then((response) => response.json()).then((catalogs) => {
+  fetch("texts.json?v=e6bcaffaa542").then((response) => response.json()).then((catalogs) => {
     const text = (key, params) => {
       let found = (catalogs[language] || {})[key] ?? catalogs.en[key] ?? "[" + key + "]";
       if (params) found = found.replace(/\{(\w*)\}/g, (whole, name) => (name in params ? String(params[name]) : whole));
