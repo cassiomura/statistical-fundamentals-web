@@ -1,6 +1,6 @@
 /*
  * Statistical Fundamentals, the web version: the look of the page, the desktop's (gui/style.py; the cover's places
- * from gui/cover.py, its order not: here purpose, title, lead, then the Student | Teacher switch, where the desktop puts
+ * from gui/cover.py, its order not: here the alpha's mark, title, lead, then the Student | Teacher switch, where the desktop puts
  * the switch first, on purpose: a visitor of the site reads what the laboratory is before choosing a mode): the
  * product's slate and cyan, the hues of manim one meaning each, surfaces told apart by tone and a quiet depth (a 1 px
  * light on a card's top edge, a soft shadow under it), generous spacing, a value's state in one colour and weight
@@ -12,14 +12,14 @@
  * the sheet, the measures, shared), `.portrait` or `.compact` (landscape) for where they stand; its bar is
  * `.bar.in-bench.phone`; touch targets are 44 px, 8 px apart: the phone's part, at the end, is kept as it is.
  */
-@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=9a2c3008f344") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=9a2c3008f344") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=9a2c3008f344") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=81a8243d8d4b") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=81a8243d8d4b") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=81a8243d8d4b") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 /* the glyphs Selawik lacks (Greek, subscripts, the minus sign, arrows): DejaVu's, as the figure draws them, the
    subscripts lowered under the baseline (build.lower_subscripts); every address stamped ?v=BUILD by web/build.py, the
    preload of index.html the same address */
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=9a2c3008f344") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=9a2c3008f344") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=81a8243d8d4b") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=81a8243d8d4b") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
 
 :root {
   --window: var(--theme-deep);
@@ -169,8 +169,9 @@ body.busy { cursor: progress; }
 .pill.locked .pill-mark { border-style: dashed; border-color: var(--disabled); color: var(--disabled); }
 .pill-short { display: none; }
 @media (hover: hover) {
-  .pill:hover { background: var(--hover); }
+  .pill:not(.locked):not(.current):hover { background: var(--hover); }       /* never the locked pill's, nor the current one's */
 }
+.pill:not(.locked):not(.current):active { background: var(--pressed); }
 
 /* ------------------------------------------------------------------ the shared controls */
 /* a segmented control: a recessed track, the chosen option a lighter material on it with a neutral 1 px ring (the ring
@@ -180,7 +181,8 @@ body.busy { cursor: progress; }
 .segment { min-height: 32px; padding: 4px 13px; border: none; border-radius: var(--radius-field); background: transparent; color: var(--prose);
            font-size: var(--fs-small); display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
 @media (hover: hover) {
-  .segment:not(.locked):hover { color: var(--text); }
+  /* an option not chosen, under the mouse: a fill of the chosen tone at 45 % (the text alone changed too little) */
+  .segment:not(.locked):not(.checked):hover { color: var(--text); background: color-mix(in srgb, var(--chosen) 45%, transparent); }
 }
 .segment:active { background: var(--pressed); }
 .segment.checked { background: var(--chosen); color: var(--text); outline: 1px solid transparent; outline-offset: -1px;
@@ -210,9 +212,14 @@ body.busy { cursor: progress; }
 .cover { flex: 1; overflow-y: auto; background: var(--surface); display: flex; scrollbar-width: thin; scrollbar-color: var(--pill) transparent;
          padding: 40px max(24px, env(safe-area-inset-right)) 40px max(24px, env(safe-area-inset-left)); }
 .cover-inner { flex: 1; min-width: 0; display: flex; gap: 56px; justify-content: center; margin: auto; }
-/* the title's column: purpose, title, lead, then the Student | Teacher switch with its line, then Restart */
+/* the title's column: the alpha's mark, title, lead, then the Student | Teacher switch with its line, then Restart */
 .lede { flex: 0 1 380px; min-width: 300px; display: flex; flex-direction: column; align-items: flex-start; padding-top: 12px; }
-.purpose { color: var(--accent); margin: 0 0 8px; font-size: var(--fs-body); font-weight: 600; letter-spacing: 0.01em; text-wrap: balance; }
+/* the alpha's mark: a quiet pill, a label and not a control (no hover, no focus); its name in the accent, the version
+   after it in the muted ink and tabular figures */
+.edition { margin: 0 0 14px; padding: 3px 11px 4px; border-radius: var(--radius-round); white-space: nowrap;
+           border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent); background: color-mix(in srgb, var(--accent) 7%, transparent);
+           color: var(--accent); font-size: var(--fs-small); font-weight: 600; line-height: 1.35; }
+.edition-version { margin-left: 3px; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
 .cover-title { font-size: var(--fs-title); line-height: 1.08; margin: 0 0 16px; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
 .lead { color: var(--muted); font-size: var(--fs-large); line-height: 1.55; margin: 0; text-wrap: pretty; }
 .mode-switch { margin-top: 28px; }
@@ -308,8 +315,14 @@ body.busy { cursor: progress; }
 .card-label { color: var(--muted); }
 .card-value { text-align: right; font-variant-numeric: tabular-nums; }
 .rule { height: 1px; background: var(--border); margin-top: 12px; }
+/* the controls' block scrolls only when even a short window's column (below) cannot hold it: then its lower edge fades
+   while more lies under it (.more, set by app.js's fold) and its thumb is in the disabled ink (4.86:1 on the column) */
 .column-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px var(--inset) 8px; display: flex; flex-direction: column; gap: 15px;
-               scrollbar-width: thin; scrollbar-color: var(--pill) transparent; }
+               scrollbar-width: thin; scrollbar-color: var(--disabled) transparent; }
+.column-body::-webkit-scrollbar { width: 8px; }
+.column-body::-webkit-scrollbar-thumb { background: var(--disabled); border-radius: var(--radius-round); }
+.bench.desktop .column-body.more { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent);
+                                   mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); }
 .column-foot { flex: none; padding: 10px var(--inset) 12px calc(var(--inset) - 10px); display: flex; flex-direction: column; gap: 6px;
                padding-bottom: max(12px, env(safe-area-inset-bottom)); }
 .column-foot > .status, .column-foot > .missing, .column-foot > .filled { margin-left: 10px; }
@@ -342,20 +355,21 @@ body.busy { cursor: progress; }
 .picks .segment { padding: 4px 10px; min-width: 40px; font-variant-numeric: tabular-nums; }
 .slider-line { display: flex; align-items: center; gap: 10px; }
 .slider-value { min-width: 80px; font-family: var(--number-face); font-size: var(--fs-body); white-space: nowrap; font-variant-numeric: tabular-nums; }
-/* the slider, drawn here: a 4 px track, the part travelled in the accent (--fill, kept by app.js), a 16 px thumb; WebKit's
+/* the slider, drawn here: a 4 px track, the part travelled in the accent (--fill, kept by app.js), the rest in the check
+   border's tone (3:1 against the column, as the number field's edge), a 16 px thumb; WebKit's
    and Mozilla's pseudo-elements in rules of their own (a rule with a selector a browser does not know is dropped whole) */
 .slider { flex: 1; min-width: 0; height: 28px; margin: 0; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; }
 .slider:focus-visible { outline: none; }
 .slider:disabled { cursor: default; }
 .slider::-webkit-slider-runnable-track { height: 4px; border-radius: var(--radius-round);
-                                         background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--pill) var(--fill, 0%)); }
+                                         background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--theme-check-border) var(--fill, 0%)); }
 .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border: none; border-radius: 50%;
                                 background: var(--text); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent),
                                                                      0 1px 3px color-mix(in srgb, var(--shade) 55%, transparent); }
 .slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent); }
 .slider:disabled::-webkit-slider-runnable-track { background: var(--pill); }
 .slider:disabled::-webkit-slider-thumb { background: var(--disabled); box-shadow: none; }
-.slider::-moz-range-track { height: 4px; border-radius: var(--radius-round); background: var(--pill); }
+.slider::-moz-range-track { height: 4px; border-radius: var(--radius-round); background: var(--theme-check-border); }
 .slider::-moz-range-progress { height: 4px; border-radius: var(--radius-round); background: var(--accent); }
 .slider::-moz-range-thumb { width: 16px; height: 16px; border: none; border-radius: 50%; background: var(--text);
                             box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent), 0 1px 3px color-mix(in srgb, var(--shade) 55%, transparent); }
@@ -366,7 +380,7 @@ body.busy { cursor: progress; }
 .check input { accent-color: var(--accent); }
 .featured { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 52px; padding: 8px 14px;
             text-align: left; background: transparent; border: 1px solid var(--accent); border-radius: var(--radius-command); }
-.featured:focus-visible { outline: none; border-width: 2px; padding: 7px 13px; }
+.featured:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }      /* the page's ring, as every command's */
 .featured:disabled { border-color: var(--pill); }
 .featured-title { color: var(--accent); font-size: var(--fs-body); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
 .featured:disabled .featured-title { color: var(--disabled); }
@@ -377,7 +391,7 @@ body.busy { cursor: progress; }
                     border: 1px solid var(--track); color: var(--text); padding: 0; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent); }
 .transport-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .transport-button:disabled { background: transparent; border-color: var(--track); color: var(--disabled); cursor: default; box-shadow: none; }
-/* the line under the transport (a student's empty Free sampling: "No point yet: click in the design space") wraps in the
+/* the line under the transport (a free sampling's count: "No point yet", "12 points placed") wraps in the
    desktop's column, never cut; the phone's dock keeps it on one line beside the buttons (.bench.dense) */
 .stage-name { color: var(--muted); font-size: var(--fs-small); min-height: 1.3em; white-space: normal; text-wrap: pretty;
               font-variant-numeric: tabular-nums; }
@@ -398,10 +412,11 @@ body.busy { cursor: progress; }
 .filled { min-height: 44px; padding: 8px 16px; border-radius: var(--radius-command); border: 2px solid var(--accent); background: var(--accent);
           color: var(--on-accent); font-size: var(--fs-large); font-weight: 600;
           box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 32%, transparent), 0 10px 22px -14px color-mix(in srgb, var(--accent) 50%, transparent); }
-.filled:focus-visible { outline: none; border-color: var(--text); }
+/* the page's ring, outside the border: pressed (a toggle's border is the text's) or not, the focus reads the same */
+.filled:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .filled[aria-pressed="true"] { background: var(--accent-hover); border-color: var(--text); }
 .filled.disabled { color: var(--disabled); background: var(--track); border-color: var(--track); cursor: default; box-shadow: none; }
-/* it cannot be pressed but takes the focus (its tooltip says what is missing): a ring, since its border is the track's */
+/* it cannot be pressed but takes the focus (its tooltip says what is missing): the same ring */
 .filled.disabled:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .restore { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 5px 10px; color: var(--muted);
            background: transparent; border: 1px solid transparent; border-radius: var(--radius-command); }
@@ -411,6 +426,25 @@ body.busy { cursor: progress; }
   .chip:not(:disabled):hover { color: var(--text); background: var(--hover); }
   .filled:not(.disabled):hover { background: var(--accent-hover); border-color: var(--accent-hover); }
   .restore:hover { color: var(--text); background: var(--hover); }
+}
+/* a short window (1522 x 692: a 1903 x 865 window at 125 %; 1366 x 657: a 1366 x 768 screen less a browser's chrome):
+   the column tightened, every step alike (the title, the card's slot, the rule, the controls and the foot keep their
+   order and stand at the same places from a step to the next), so that step 3 validated or in Real Run fits whole */
+@media (max-height: 760px) {
+  .bench.desktop .column-head { padding-top: 10px; }
+  .bench.desktop .lab-title { margin-bottom: 8px; }
+  .bench.desktop .card-slot { height: 126px; }
+  .bench.desktop .card { padding: 7px 12px; }
+  .bench.desktop .card-heading { margin-bottom: 3px; }
+  .bench.desktop .card-row { padding: 0; }
+  .bench.desktop .rule { margin-top: 8px; }
+  .bench.desktop .column-body { padding-top: 9px; padding-bottom: 4px; gap: 10px; }
+  .bench.desktop .control { gap: 4px; }
+  .bench.desktop .transport { gap: 3px; }
+  .bench.desktop .chips { gap: 6px; }
+  .bench.desktop .column-foot { padding-top: 6px; padding-bottom: max(8px, env(safe-area-inset-bottom)); gap: 4px; }
+  .bench.desktop .filled { min-height: 40px; padding-block: 6px; }
+  .bench.desktop .restore { min-height: 32px; padding-block: 3px; }
 }
 .featured:not(:disabled):active { background: var(--pressed); }
 .transport-button:not(:disabled):active { background: var(--pressed); }
@@ -426,8 +460,11 @@ body.busy { cursor: progress; }
 .alert { position: absolute; top: 6px; right: 10px; max-width: 70%; padding: 4px 12px; border-radius: var(--radius-round); font-size: var(--fs-small);
          color: var(--prose); background: var(--track); }
 .alert.warning { color: var(--warning); background: var(--palette-alert-tint); }
-.busy-note { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); padding: 4px 14px; border-radius: var(--radius-round);
+/* the busy note: on the desktop at the strip's end, beside View code, never over the figure (its room kept, so nothing
+   moves when it shows); on a phone over the figure's box, which has no strip end */
+.busy-note { flex: none; align-self: center; white-space: nowrap; padding: 4px 14px; border-radius: var(--radius-round);
              background: var(--raised); color: var(--prose); font-size: var(--fs-small); opacity: 0; pointer-events: none; box-shadow: var(--depth-card); }
+.figure-box > .busy-note { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); }
 body.busy .busy-note { opacity: 0.95; }
 .strip { flex: none; display: flex; align-items: center; gap: 0; border-top: 1px solid var(--track); padding: 5px 0;
          padding-bottom: max(5px, env(safe-area-inset-bottom)); }
@@ -444,7 +481,7 @@ body.busy .busy-note { opacity: 0.95; }
 .kind-warning { color: var(--warning); font-weight: 700; }
 .kind-ok { color: var(--ok); }
 .metric-detail.kind-error, .metric-detail.kind-warning, .metric-detail.kind-ok { font-weight: 600; }
-.strip-end { flex: none; display: flex; gap: 4px; }
+.strip-end { flex: none; display: flex; align-items: center; gap: 8px; }
 .link { min-height: 40px; padding: 5px 10px; color: var(--accent); background: transparent; border: 1px solid transparent; border-radius: var(--radius-command);
         font-size: var(--fs-body); white-space: nowrap; }
 @media (hover: hover) {
@@ -502,8 +539,10 @@ body.busy .busy-note { opacity: 0.95; }
 }
 
 /* ------------------------------------------------------------------ tooltips, dialogs, errors */
-.tip { position: fixed; z-index: 50; max-width: 340px; padding: 7px 10px; border-radius: var(--radius-command); background: var(--raised); color: var(--text);
-       border: 1px solid transparent; font-size: var(--fs-small); line-height: 1.4; white-space: pre-line; box-shadow: var(--depth-float); pointer-events: none; }
+.tip { position: fixed; z-index: 50; max-width: 260px; padding: 7px 10px; border-radius: var(--radius-command); background: var(--raised); color: var(--text);
+       border: 1px solid var(--border); font-size: var(--fs-small); line-height: 1.4; white-space: pre-line; box-shadow: var(--depth-float); }
+/* the tooltip takes the pointer (WCAG 1.4.13: it can be hovered, app.js keeps it while the pointer is on it); shown at
+   once along a toolbar (.instant), it skips its fade (below) */
 .dialog { max-width: min(460px, calc(100vw - 32px)); padding: 22px 24px; border: 1px solid var(--border); border-radius: var(--radius-card);
           background: var(--surface); color: var(--text); box-shadow: var(--depth-float); overscroll-behavior: contain; }
 .dialog::backdrop { background: rgba(5, 8, 12, 0.6); }     /* palette.SHADOW: a ::backdrop inherits no custom property in older engines */
@@ -534,8 +573,9 @@ body.busy .busy-note { opacity: 0.95; }
   .cover.first .journey-stop:nth-child(3) { animation-delay: 200ms; }
   .dialog[open] { animation: sf-rise 180ms cubic-bezier(0.2, 0, 0, 1); }
   .dialog[open]::backdrop { animation: sf-fade 180ms ease-out; }
-  .tip:not([hidden]) { animation: sf-fade 120ms ease-out; }
+  .tip:not([hidden]):not(.instant) { animation: sf-fade 120ms ease-out; }
   .segment { transition: background-color 140ms ease, color 140ms ease, box-shadow 140ms ease; }
+  .pill { transition: background-color 150ms ease-out; }
   .loading-fill { transition: width 400ms ease; }
   .busy-note { transition: opacity 150ms ease; }
   .bench-card::after { transition: background-color 160ms ease, translate 160ms ease-out; }
@@ -543,8 +583,13 @@ body.busy .busy-note { opacity: 0.95; }
   .arrow { transition: opacity 160ms ease, translate 160ms ease-out; }
   .filled, .chip, .featured, .transport-button, .primary-small, .danger-button {
     transition: scale 150ms ease-out, background-color 150ms ease-out, border-color 150ms ease-out; }
+  /* the quiet commands (the bar's, the strip's link, Restore, the code panel's close) as the filled ones: a colour that
+     eases, a press */
+  .home, .bar-icon, .quiet-button, .link, .restore, .code-close {
+    transition: scale 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out; }
   .filled:not(.disabled):active, .chip:not(:disabled):active, .featured:not(:disabled):active, .transport-button:not(:disabled):active,
-  .primary-small:active, .danger-button:active { scale: 0.96; }
+  .primary-small:active, .danger-button:active,
+  .home:active, .bar-icon:active, .quiet-button:active, .link:active, .restore:active, .code-close:active { scale: 0.96; }
 }
 @media (prefers-reduced-motion: no-preference) and (hover: hover) {
   /* the card lifts 2 px, its node stays on the thread; pressed, it lands */
@@ -554,7 +599,7 @@ body.busy .busy-note { opacity: 0.95; }
 }
 @media (prefers-reduced-motion: reduce) {
   .enter, .cover.first { animation: sf-fade 200ms ease-out backwards; }
-  .dialog[open], .tip:not([hidden]) { animation: sf-fade 120ms ease-out; }
+  .dialog[open], .tip:not([hidden]):not(.instant) { animation: sf-fade 120ms ease-out; }
 }
 
 /* ------------------------------------------------------------------ forced colours: the chosen option and the current step said by the system's own */

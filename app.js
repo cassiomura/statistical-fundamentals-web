@@ -4,7 +4,7 @@
  *
  *   the cover     the three benches on one thread, the Student | Teacher switch, the bar (share, sound, language);
  *                 in a desktop's window placed by gui/cover.py's numbers (arrangeCover), larger past full HD; the
- *                 title's column in its own order, on purpose: purpose, title, lead, then the switch (the desktop
+ *                 title's column in its own order, on purpose: the alpha's mark, title, lead, then the switch (the desktop
  *                 puts the switch first; a visitor of the site reads what it is before choosing a mode)
  *   a bench       the bar (Home, the bench's name and stars, the pills of its steps), the column of the step's
  *                 controls, the figure (drawn by the lab in Python, as RGBA pixels), the strip of measures, View code
@@ -23,8 +23,8 @@
  * in a box of one size: the page gives the box's room (`fit`) and the bridge draws each panel as wide as IT fits; the
  * controls are a dense dock, the only scroller, the card a sheet over it; the foot is one row (the filled button,
  * Restore) and its line says something over the dock's edge only when there is something to say. On a touch screen a
- * long press shows the tooltip of what is pressed (never the figure's, a slider's or a field's), a tap that of a measure
- * or of the foot's line.
+ * long press shows the tooltip of what is pressed (never a slider's or a field's; the figure has none), a tap that of a
+ * measure or of the foot's line.
  * Every text comes from the catalogs (texts.json); what is kept between visits (the language, the mode, the student's
  * stars, the sound) is in localStorage.
  */
@@ -39,10 +39,18 @@
   const THROTTLE = 0.25;                 // seconds: gui/sounds.THROTTLE
   const TYPING_MS = 350;                 // gui/widgets.NumberField.TYPING_MS: a pause in the typing commits a number in range
   const BUSY_AFTER = 300;                // milliseconds a request may take before the page says it is computing
-  const TIP_DELAY = 450;                 // milliseconds the pointer rests before a tooltip shows
+  const TIP_DELAY = 600;                 // milliseconds the pointer rests before a tooltip shows
+  const TIP_WIDTH = 260;                 // pixels: the widest a tooltip grows (one short sentence, a short box)
+  const TIP_AGAIN = 400;                 // milliseconds: a tooltip closed this recently, the next one shows at once (a toolbar)
+  const TIP_GRACE = 300;                 // milliseconds the tooltip shown waits for the pointer crossing towards it
   const MOST_RATIO = 2;                  // bridge.MOST_RATIO: a denser screen is drawn at 2 and scaled by the browser
   const COLUMN = 312, STAGE_INSETS = [20, 10, 20, 0], STAGE_GAP = 4;   // gui/lab_views
   const CODE_SIDE = 1200;                // the code panel beside the bench from this width (gui/main_window.SIDE_BY_SIDE_WIDTH)
+  // beside the bench, the code panel is at most CODE_MOST (and 42 % of the window) wide, and never so wide that the
+  // stage keeps less than STACK_WIDTH for its figure (explorers/panels.STACK_WIDTH: narrower, the labs stack the three
+  // panels, a figure twice as tall as the stage, which then scrolled the measures' strip off the screen); a panel that
+  // would be narrower than CODE_LEAST lies over the bench instead, as under CODE_SIDE
+  const CODE_MOST = 560, CODE_LEAST = 380, STACK_WIDTH = 620;
   const COVER = {                        // gui/cover.py: the cover in a desktop's window (arrangeCover)
     column: 1240, path: 860, ledeShare: 0.30, ledeLeast: 320, ledeMost: 400, gap: 56, rail: 64, pad: 22, padY: 11,
     arrow: 24, cardGap: 14, rowUsual: 150, rowMost: 380, typeMost: 1.25, pictureShare: 0.30, pictureMost: 205,
@@ -124,10 +132,54 @@
     return el("span", { class: "icon " + (extra || ""), style: `--icon: url("icons/${name}.svg")`, "aria-hidden": "true" });
   }
 
+  // A tooltip, and the same words as the element's accessible description (aria-description), so that a screen reader
+  // hears what a pointer reads (a measure is not announced as a bare number); not when they are already its name or text.
   function setTip(node, tip) {
     if (tip) node.dataset.tip = tip;
     else delete node.dataset.tip;
+    const said = tip && tip !== node.getAttribute("aria-label") && tip !== node.textContent.trim();
+    if (said) node.setAttribute("aria-description", tip);
+    else node.removeAttribute("aria-description");
   }
+
+  // ---------------------------------------------------------------- groups of options (the ARIA radio group and tabs)
+  // A group of options (the mode, the language, a control's options, a phone's panels) is ONE stop of Tab: its chosen
+  // option holds it (tabindex 0, the others -1; the first shown while none is chosen). The arrow keys move along the
+  // group and choose what they reach (the pattern's "selection follows focus"); a locked option is reached, not chosen,
+  // and says why (its tooltip on the keyboard's focus, its aria-description); Home and End go to the group's ends.
+  const OPTION = '[role="radio"], [role="tab"]';
+  const GROUP = '[role="radiogroup"], [role="tablist"]';
+
+  function optionsOf(group) {
+    return [...group.querySelectorAll(OPTION)].filter((option) => !option.hidden && option.closest(GROUP) === group);
+  }
+
+  function rove(group) {
+    const options = optionsOf(group);
+    const chosen = options.find((option) => option.getAttribute("aria-checked") === "true" || option.getAttribute("aria-selected") === "true");
+    for (const option of options) option.tabIndex = option === (chosen || options[0]) ? 0 : -1;
+  }
+
+  function refocus(group) {                                          // a group drawn again: the focus back on its chosen option
+    const option = group && optionsOf(group).find((each) => each.tabIndex === 0);
+    if (option) option.focus({ preventScroll: true });
+  }
+
+  document.addEventListener("keydown", (event) => {
+    const option = event.target.closest && event.target.closest(OPTION);
+    const group = option && option.closest(GROUP);
+    if (!group || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const options = optionsOf(group);
+    const at = options.indexOf(option);
+    const to = { ArrowRight: at + 1, ArrowDown: at + 1, ArrowLeft: at - 1, ArrowUp: at - 1, Home: 0, End: options.length - 1 }[event.key];
+    if (to === undefined || at < 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const next = options[(to + options.length) % options.length];
+    if (next === option) return;
+    next.focus({ preventScroll: true });
+    if (next.getAttribute("aria-disabled") !== "true") next.click();   // chosen as it is reached; a locked one only says why
+  }, true);
 
   // ---------------------------------------------------------------- sound (gui/sounds.SoundController)
   const sound = {
@@ -316,8 +368,13 @@
     return "desktop";
   }
 
-  function codeBeside() {
-    return window.innerWidth >= CODE_SIDE && page.layout === "desktop";
+  function codeWidth() {
+    const stage = STACK_WIDTH + STAGE_INSETS[0] + STAGE_INSETS[2];   // the least stage that keeps the figure unstacked
+    return Math.floor(Math.min(CODE_MOST, 0.42 * window.innerWidth, window.innerWidth - COLUMN - stage));
+  }
+
+  function codeBeside(layout) {
+    return window.innerWidth >= CODE_SIDE && (layout || page.layout) === "desktop" && codeWidth() >= CODE_LEAST;
   }
 
   function figureSize() {
@@ -343,7 +400,7 @@
 
   function estimateSize(ratio) {
     const bar = 49, strip = 56;                                     // the bar and the strip of two lines, as they come
-    const code = page.view && page.view.bench && page.view.bench.code.open && window.innerWidth >= CODE_SIDE ? 560 : 0;
+    const code = page.view && page.view.bench && page.view.bench.code.open && codeBeside("desktop") ? codeWidth() : 0;
     return { width: Math.max(window.innerWidth - COLUMN - code - 40, 120), height: Math.max(window.innerHeight - bar - STAGE_INSETS[1] - strip, 200), ratio };
   }
 
@@ -437,6 +494,7 @@
       setTip(option, name);
       box.append(option);
     }
+    rove(box);
     return box;
   }
 
@@ -458,6 +516,8 @@
     const signature = JSON.stringify([view.screen, view.language, view.languages, view.bar, view.most, bench, sound.enabled, phone]);
     if (signature === page.barSignature && bar.childElementCount) return;
     page.barSignature = signature;
+    const focused = document.activeElement;                          // an option of the language chosen by the arrows: the
+    const inLanguage = focused && bar.contains(focused) && !!focused.closest(".language");   // focus stays in the switch
     bar.replaceChildren();
     bar.classList.toggle("in-bench", view.screen !== "cover");      // a phone inside a bench: one row, no language box
     bar.classList.toggle("phone", phone);
@@ -495,6 +555,7 @@
     }
     bar.append(soundButton(view));
     bar.append(languageBox(view));
+    if (inLanguage) refocus(bar.querySelector(".language"));
   }
 
   // The stars as icons (the filled star, the outline of a hollow one), the letters kept as the text a screen reader
@@ -534,15 +595,22 @@
     page.nodes = {};
     closeCode();
     const cover = view.cover;
+    const focused = document.activeElement;                          // the mode chosen by the arrows: the focus stays on the switch
+    const inSwitch = !!(focused && focused.closest && focused.closest(".mode-switch"));
     const switcher = el("div", { class: "segmented mode-switch", role: "radiogroup", "aria-label": cover.mode_label });
     for (const mode of cover.modes) {
       switcher.append(el("button", { class: "segment" + (mode.key === view.mode ? " checked" : ""), type: "button", role: "radio",
-                                     "aria-checked": String(mode.key === view.mode), onclick: () => ask("mode", { mode: mode.key }) }, mode.name));
+                                     "aria-checked": String(mode.key === view.mode),
+                                     onclick: () => { if (mode.key !== page.view.mode) ask("mode", { mode: mode.key }); } }, mode.name));
     }
+    rove(switcher);
     const restart = el("button", { class: "quiet-button restart", type: "button", onclick: confirmRestart,
                                    style: cover.restart ? null : "visibility:hidden" }, cover.restart_texts.command);
     setTip(restart, cover.restart_texts.tip);
-    const lede = el("section", { class: "lede" }, el("p", { class: "purpose" }, cover.purpose), el("h1", { class: "cover-title" }, cover.title),
+    // the alpha's mark over the title: a label, not a control; the version as the build computed it, never typed in a text
+    const edition = el("p", { class: "edition" }, el("span", { class: "edition-name" }, cover.edition), " ",
+                       el("span", { class: "edition-version" }, cover.version || document.body.dataset.version));
+    const lede = el("section", { class: "lede" }, edition, el("h1", { class: "cover-title" }, cover.title),
                     el("p", { class: "lead" }, cover.lead), switcher, el("p", { class: "mode-line" }, cover.mode_line), restart);
     const journey = el("ol", { class: "journey" });
     cover.cards.forEach((card) => journey.append(coverCard(card)));
@@ -570,7 +638,8 @@
       }
     }
     const last = journey.querySelector(`[data-bench="${cover.last}"]`);
-    if (last && document.activeElement === document.body) last.focus({ preventScroll: true });
+    if (inSwitch) refocus(switcher);
+    else if (last && document.activeElement === document.body) last.focus({ preventScroll: true });
   }
 
   // The cover composed for the screen it is on, as the desktop's (gui/cover.CoverView.arrange): in a desktop's window the
@@ -824,10 +893,13 @@
     if (!lab.restore.shown) nodes.restore.hidden = true;
 
     nodes.panels = el("div", { class: "segmented panel-switch", role: "tablist", "aria-label": text("web.panels"), hidden: true });
+    // the figure: named by the lab's lead, described (for assistive technology only, never on screen) by the keys that
+    // act on it in this step (Lab.keyboard)
+    nodes.keys = el("p", { class: "visually-hidden", id: "figure-keys" });
     nodes.canvas = el("canvas", { class: "figure", tabindex: "0", role: "img" });
     nodes.alert = el("div", { class: "alert", hidden: true });
-    nodes.busy = el("div", { class: "busy-note", "aria-hidden": "true" }, text("web.busy"));
-    nodes.figureBox = el("div", { class: "figure-box" }, nodes.canvas, nodes.alert, nodes.busy);
+    nodes.busy = el("div", { class: "busy-note", "aria-hidden": "true" }, text("web.busy"));   // the desktop's: at the strip's end
+    nodes.figureBox = el("div", { class: "figure-box" }, nodes.canvas, nodes.keys, nodes.alert, nodes.busy);
     nodes.figureBox.addEventListener("scroll", () => fold(nodes.figureBox, false), { passive: true });
     nodes.metrics = el("div", { class: "metrics" });
     nodes.table = el("div", { class: "lab-table", hidden: true });
@@ -851,6 +923,7 @@
     } else {
       observe(nodes.stage);
       observe(nodes.strip);
+      observe(nodes.body);
     }
   }
 
@@ -864,7 +937,9 @@
     foot.append(nodes.restore);
     const column = el("aside", { class: "column" }, head, body, foot);
     nodes.column = column;
-    nodes.links = el("div", { class: "strip-end" });
+    nodes.body = body;
+    body.addEventListener("scroll", () => fold(body, false), { passive: true });   // more under its edge: the edge fades
+    nodes.links = el("div", { class: "strip-end" }, nodes.busy);   // the busy note beside View code, out of the figure
     for (const link of lab.links) {
       const button = el("button", { class: "link", type: "button", onclick: () => ask("action", { key: link.key }) }, link.label);
       setTip(button, link.tip);
@@ -1065,7 +1140,6 @@
         parts.picks = el("div", { class: "segmented picks" });
         parts.pickButtons = control.shortcuts.map((pick, index) => {
           const button = el("button", { class: "segment", type: "button", onclick: () => ask("pick", { key: control.key, index }) }, pick.text);
-          setTip(button, pick.tip);
           parts.picks.append(button);
           return button;
         });
@@ -1190,8 +1264,10 @@
     } else {
       nodes.alert.hidden = true;
     }
-    nodes.canvas.setAttribute("aria-label", lab.lead || lab.title);
-    setTip(nodes.canvas, lab.figure_tip);
+    nodes.canvas.setAttribute("aria-label", lab.lead || lab.title);  // its name; the figure has no tooltip
+    nodes.keys.textContent = lab.keys || "";
+    if (lab.keys) nodes.canvas.setAttribute("aria-describedby", "figure-keys");
+    else nodes.canvas.removeAttribute("aria-describedby");
     nodes.canvas.style.cursor = lab.cursor || "";
     if (lab.table) {
       nodes.table.hidden = false;
@@ -1215,6 +1291,7 @@
       fold(nodes.dock, false);
     }
     fitSegments();
+    if (nodes.body) fold(nodes.body, false);                       // the desktop's column: more under its edge, a fade
   }
 
   function updateControl(control) {
@@ -1231,14 +1308,17 @@
         button.classList.toggle("checked", checked);
         button.setAttribute("aria-checked", String(checked));
         button.classList.toggle("locked", !!locked);
-        button.setAttribute("aria-disabled", locked ? "true" : "false");
-        button.tabIndex = locked ? -1 : 0;
+        button.setAttribute("aria-disabled", locked ? "true" : "false");   // a locked option stays reachable: its tooltip says why
         button.querySelector(".segment-lock").replaceChildren(locked ? icon("padlock", "small") : "");
         setTip(button, locked || "");
       });
+      rove(parts.segments);                                         // one Tab stop: the chosen option
     } else if (control.kind === "typed") {
       if (document.activeElement !== parts.input) parts.input.value = valueText(control.value);
-      (parts.pickButtons || []).forEach((button, index) => button.classList.toggle("checked", control.shortcuts[index].checked));
+      (parts.pickButtons || []).forEach((button, index) => {        // a quick pick says whether it is the N chosen
+        button.classList.toggle("checked", control.shortcuts[index].checked);
+        button.setAttribute("aria-pressed", String(!!control.shortcuts[index].checked));
+      });
     } else {
       parts.value.textContent = control.text;
       parts.input.max = String(Math.max(control.top, 0));
@@ -1337,9 +1417,13 @@
       if (!panels.includes(page.panel)) page.panel = panels[0];
       const names = { plane: text("web.panel.plane"), space: text("web.panel.space"),
                       third: text("web.panel.third." + page.view.bench.step_key) };
+      const focused = nodes.panels.contains(document.activeElement);   // a tab chosen by the arrows keeps the focus
       nodes.panels.replaceChildren(...panels.map((panel) => el("button", {
         class: "segment" + (panel === page.panel ? " checked" : ""), type: "button", role: "tab", "aria-selected": String(panel === page.panel),
-        onclick: () => { page.panel = panel; ask("render", {}, { transient: true, group: "render" }); } }, names[panel])));
+        onclick: () => { if (panel !== page.panel) { page.panel = panel; ask("render", {}, { transient: true, group: "render" }); } } },
+        names[panel])));
+      rove(nodes.panels);
+      if (focused) refocus(nodes.panels);
     }
     canvas.dataset.panel = switching ? page.panel : "";
     if (nodes.figureBox.classList.contains("scrolls")) fold(nodes.figureBox, false);   // more below: its edge fades
@@ -1422,6 +1506,7 @@
           }, SETTLE_MS);
           return;
         }
+        if (page.screen === "bench") fold(page.nodes.body, false);  // the column taller or shorter: its fade follows
         if (page.screen === "bench" && page.meta && stale()) ask("render", {}, { transient: true, group: "render" });
       });
     }
@@ -1431,7 +1516,9 @@
   // The phone turned (or the window resized into another arrangement): the bench is built again. A phone's browser may
   // say so by orientationchange or by the media query alone, without a resize (the emulator does).
   function turned() {
+    hideTip();                                                      // its owner has moved: a tooltip never stays where it was
     if (page.screen === "bench") fitSegments();                    // the column's or the dock's width may have changed
+    if (page.screen === "bench") placeCode();                      // the code panel beside or over, at its width for this window
     if (page.screen === "cover") {                                  // the cover composed again for the new size, once a frame
       cancelAnimationFrame(coverFrame);
       coverFrame = requestAnimationFrame(arrangeCover);
@@ -1485,8 +1572,18 @@
       page.codeShown = shown;
     }
     panel.hidden = false;
-    panel.classList.toggle("beside", codeBeside());
+    placeCode();
     document.body.classList.add("code-open");
+  }
+
+  // The code panel beside the bench (as wide as codeWidth allows) or over it: again whenever the window is resized; the
+  // stage then has another room, which its ResizeObserver turns into a figure drawn for it.
+  function placeCode() {
+    const panel = page.nodes.code;
+    if (!panel || panel.hidden) return;
+    const beside = codeBeside();
+    panel.classList.toggle("beside", beside);
+    panel.style.width = beside ? codeWidth() + "px" : "";
   }
 
   function codeBody(reading) {
@@ -1551,7 +1648,7 @@
 
   // ---------------------------------------------------------------- tooltips (tap to show on a touch screen)
   const tip = document.getElementById("tip");
-  let tipTimer = 0, tipOwner = null, pointerAt = null, touchedAt = -Infinity;
+  let tipTimer = 0, tipOwner = null, pointerAt = null, touchedAt = -Infinity, leaveTimer = 0, tipClosedAt = -Infinity;
   let press = null;                      // a touch resting on what has a tooltip: {node, x, y, timer, shown}
   let tap = null;                        // a touch on a measure or the foot's line: {node, x, y, owned}, its tip on release
   const NO_PRESS = "canvas, input, select, textarea";               // their own gestures: the figure's, a slider's, a field's paste
@@ -1607,15 +1704,20 @@
   document.addEventListener("pointercancel", released, true);
   document.addEventListener("contextmenu", (event) => { if (press) event.preventDefault(); }, true);
 
-  function showTipOf(node) {
+  // The tooltip of `node`, under it (over it where the screen ends); a tall element (a cover card, a control's group) has
+  // it at the pointer, unless the keyboard brought it (`keyboard`): then at the element's own box, whatever the mouse
+  // did before. `instant`: shown at once along a toolbar, without its fade.
+  function showTipOf(node, keyboard, instant) {
     const words = node && node.dataset.tip;
     if (!words) return;
+    clearTimeout(leaveTimer);
     tipOwner = node;
     tip.textContent = words;
+    tip.classList.toggle("instant", !!instant);
     tip.hidden = false;
     let box = node.getBoundingClientRect();
-    if (box.height > 120 && pointerAt) box = { left: pointerAt.x - 1, right: pointerAt.x + 1, top: pointerAt.y - 12, bottom: pointerAt.y + 14, width: 2, height: 26 };
-    const width = Math.min(340, window.innerWidth - 16);
+    if (box.height > 120 && pointerAt && !keyboard) box = { left: pointerAt.x - 1, right: pointerAt.x + 1, top: pointerAt.y - 12, bottom: pointerAt.y + 14, width: 2, height: 26 };
+    const width = Math.min(TIP_WIDTH, window.innerWidth - 16);
     tip.style.maxWidth = width + "px";
     const room = tip.getBoundingClientRect();
     let left = Math.min(Math.max(8, box.left + box.width / 2 - room.width / 2), window.innerWidth - room.width - 8);
@@ -1627,17 +1729,29 @@
 
   function hideTip() {
     clearTimeout(tipTimer);
+    clearTimeout(leaveTimer);
+    if (!tip.hidden) tipClosedAt = performance.now();
     tip.hidden = true;
     tipOwner = null;
   }
 
+  // The mouse: a tooltip waits TIP_DELAY, or none when one was shown less than TIP_AGAIN ago (along a toolbar: at once,
+  // without its fade). WCAG 1.4.13: the tooltip shown stays while the pointer is on it, and while the pointer crosses
+  // what lies between its owner and it (TIP_GRACE: nothing with a tip, or the owner's group around it).
   document.addEventListener("pointerover", (event) => {
     if (event.pointerType !== "mouse") return;
-    const node = event.target.closest && event.target.closest("[data-tip]");
     clearTimeout(tipTimer);
-    if (!node) { hideTip(); return; }
-    if (node === tipOwner) return;
-    tip.hidden = true;
+    if (tip.contains(event.target)) { clearTimeout(leaveTimer); return; }     // on the tooltip: it stays
+    const node = event.target.closest && event.target.closest("[data-tip]");
+    if (node && node === tipOwner) { clearTimeout(leaveTimer); return; }
+    const shown = !tip.hidden;
+    if (shown && (!node || node.contains(tipOwner))) {                // leaving towards the tooltip, maybe: a moment first
+      clearTimeout(leaveTimer);
+      leaveTimer = setTimeout(() => { hideTip(); if (node && node.isConnected) showTipOf(node, false, true); }, TIP_GRACE);
+      return;
+    }
+    if (!node) return;
+    if (shown || performance.now() - tipClosedAt < TIP_AGAIN) { showTipOf(node, false, true); return; }
     tipTimer = setTimeout(() => showTipOf(node), TIP_DELAY);
   });
   document.addEventListener("pointerdown", (event) => {
@@ -1654,7 +1768,8 @@
   }, true);
   document.addEventListener("focusin", (event) => {                 // a field focused by a finger says nothing over the keyboard
     const node = event.target.closest && event.target.closest("[data-tip]");
-    if (node && node.matches(":focus-visible") && performance.now() - touchedAt > 800) showTipOf(node);
+    const keyboard = event.target.matches && event.target.matches(":focus-visible");   // the element focused, not its group
+    if (node && keyboard && performance.now() - touchedAt > 800) showTipOf(node, true);
     else hideTip();
   });
   document.addEventListener("scroll", () => { hideTip(); endPress(); }, true);
