@@ -2,9 +2,12 @@
  * Statistical Fundamentals, the web version: the worker that runs the laboratory in Python.
  *
  * Pyodide (CPython compiled to WebAssembly) from jsDelivr, at the exact version web/build.py stamps here, with NumPy
- * and matplotlib; then app.zip, the application's own package (the cores, explorers/, the catalogs) and web/bridge.py,
- * unpacked into Pyodide's file system. Every number and every picture comes from that Python code, the desktop's: the
- * page (app.js) only shows them. The worker keeps the page from freezing while Python computes.
+ * and matplotlib; then app.zip, the application's own package (the cores, explorers/, the catalogs), web/bridge.py,
+ * web/faces.py and the faces of the figure (fonts/: Selawik), unpacked into Pyodide's file system. The faces are added
+ * to matplotlib's font manager (faces.register) before the bridge is imported, since explorers/panels.py resolves its
+ * faces once, at import: the figure is then set in Selawik, as the page. Every number and every picture comes from that
+ * Python code, the desktop's: the page (app.js) only shows them. The worker keeps the page from freezing while Python
+ * computes.
  *
  * Messages from the page: {type: "start", build}, then {type: "ask", id, request} (a request of bridge.Bridge.handle).
  * Messages to the page: {type: "progress", stage, fraction}, {type: "ready"}, {type: "failed", error}, and
@@ -40,7 +43,9 @@ async function start(build) {
     "import sys\n" +
     "sys.path.insert(0, '" + APP_DIR + "')\n" +
     "import matplotlib\n" +
-    "matplotlib.use('Agg')\n"
+    "matplotlib.use('Agg')\n" +
+    "import faces\n" +
+    "faces.register('" + APP_DIR + "/fonts')\n"          // Selawik, before the bridge imports explorers/panels.py
   );
   bridge = pyodide.pyimport("bridge").Bridge();
 }

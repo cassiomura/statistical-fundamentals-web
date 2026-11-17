@@ -3,7 +3,9 @@
  * web/bridge.py in Pyodide) and sends it what the reader does; it computes nothing of the study itself.
  *
  *   the cover     the three benches on one thread, the Student | Teacher switch, the bar (share, sound, language);
- *                 in a desktop's window composed as gui/cover.py composes it (arrangeCover), larger past full HD
+ *                 in a desktop's window placed by gui/cover.py's numbers (arrangeCover), larger past full HD; the
+ *                 title's column in its own order, on purpose: purpose, title, lead, then the switch (the desktop
+ *                 puts the switch first; a visitor of the site reads what it is before choosing a mode)
  *   a bench       the bar (Home, the bench's name and stars, the pills of its steps), the column of the step's
  *                 controls, the figure (drawn by the lab in Python, as RGBA pixels), the strip of measures, View code
  *
@@ -214,14 +216,29 @@
   }
 
   // ---------------------------------------------------------------- the loading screen
+  // The five stages as a list (those done ticked, the current one marked) over the bar of the whole, its share written
+  // beside it: the same fraction the worker sends sets the bar and the number. The stage is also said (a hidden live line).
   function loadingTexts() {
     document.getElementById("loading-title").textContent = text("web.loading.title");
     document.getElementById("loading-note").textContent = text("web.loading.note");
+    document.getElementById("loading-steps").replaceChildren(...STAGES.map((stage) => el("li", { class: "loading-step", dataset: { stage } },
+      el("span", { class: "loading-dot" }), el("span", { class: "loading-name" }, text("web.loading." + stage)))));
   }
 
   function progress(stage, fraction) {
-    document.getElementById("loading-stage").textContent = text("web.loading." + stage);
-    document.getElementById("loading-fill").style.width = Math.round(100 * fraction) + "%";
+    const at = STAGES.indexOf(stage);
+    for (const [index, item] of [...document.querySelectorAll(".loading-step")].entries()) {
+      const done = index < at;
+      item.classList.toggle("done", done);
+      item.classList.toggle("now", index === at);
+      const dot = item.firstElementChild;
+      if (done && !dot.childElementCount) dot.append(icon("check"));
+      else if (!done && dot.childElementCount) dot.replaceChildren();
+    }
+    const percent = Math.round(100 * fraction);
+    document.getElementById("loading-fill").style.width = percent + "%";
+    document.getElementById("loading-percent").textContent = text("web.loading.percent", { percent });
+    document.getElementById("loading-stage").textContent = text("web.loading." + stage) + " " + text("web.loading.percent", { percent });
   }
 
   function failed(error) {
@@ -267,7 +284,30 @@
   const page = {
     view: null, screen: null, layout: null, signature: null, panel: "plane", meta: null, barSignature: null,
     nodes: {}, codeFunction: 0, codeShown: null, codeReadingKey: null, codeData: null, needImage: true,
+    coverShown: false, entered: null, snapped: false,
   };
+
+  // A screen or a step that comes enters (style.css: .enter, .first; the motion the reader allows): the class is put on
+  // that change only, never on a redraw, and taken off when its animation ends; the figure is put on the screen's pixel
+  // grid again then (snap measured it while it moved).
+  function enter(node, kind) {
+    node.classList.add(kind);
+    node.addEventListener("animationend", function ended(event) {
+      if (event.target !== node && kind !== "first") return;
+      if (kind === "first" && !(event.target === node || event.target === node.querySelector(".journey-stop:last-child"))) return;
+      node.classList.remove(kind);
+      node.removeEventListener("animationend", ended);
+      const canvas = page.nodes.canvas;
+      if (canvas && node.contains(canvas)) snap(canvas, page.snapped);
+    });
+  }
+
+  // A bench enters by its parts (the column, the stage, a phone's rows), never as a whole and never its code panel: a
+  // transformed .bench would be the containing block of the code panel's position: fixed (off the desktop's side, and
+  // on a phone), which would be laid out against the bench while it moves and then jump.
+  function enterBench(nodes) {
+    for (const part of nodes.bench.children) if (part !== nodes.code) enter(part, "enter");
+  }
 
   function arrangementOf() {
     const width = window.innerWidth, height = window.innerHeight;
@@ -379,11 +419,23 @@
   }
 
   // ---------------------------------------------------------------- the bar
+  // The language: a segmented switch of two options (PT | EN, the catalogs' short names: Portuguese first, the owner's
+  // order, whatever order the bridge lists them in), a radio group named by "language", each option named by what it
+  // shows, then the language's full name in that language ("PT, Português (Brasil)": WCAG 2.5.3), the full name its tooltip.
+  const LANGUAGE_ORDER = ["pt_BR", "en"];
   function languageBox(view) {
-    const box = el("select", { class: "language", "aria-label": view.bar.language, title: view.bar.language,
-                               onchange: (event) => ask("language", { language: event.target.value }) });
-    for (const [code, name] of view.languages) {
-      box.append(el("option", { value: code, selected: code === view.language }, name));
+    const box = el("div", { class: "segmented language", role: "radiogroup", "aria-label": view.bar.language });
+    const rank = (code) => (LANGUAGE_ORDER.includes(code) ? LANGUAGE_ORDER.indexOf(code) : LANGUAGE_ORDER.length);
+    const languages = view.languages.slice().sort((a, b) => rank(a[0]) - rank(b[0]));
+    for (const [code, name] of languages) {
+      const chosen = code === view.language;
+      const short = text("web.language.short." + code);
+      const option = el("button", { class: "segment" + (chosen ? " checked" : ""), type: "button", role: "radio", "aria-checked": String(chosen),
+                                    "aria-label": short + ", " + name, lang: code === "pt_BR" ? "pt-BR" : "en",
+                                    onclick: () => { if (code !== page.view.language) ask("language", { language: code }); } },
+                        short);
+      setTip(option, name);
+      box.append(option);
     }
     return box;
   }
@@ -413,8 +465,7 @@
       bar.append(el("div", { class: "brand" }, el("img", { src: "icons/app.svg", alt: "", width: 20, height: 20 }),
                     el("span", { class: "bar-name" }, view.bar.app)));
       bar.append(el("div", { class: "bar-spring" }));
-      const share = el("button", { class: "bar-icon share", type: "button", "aria-label": text("web.share"), onclick: openShare },
-                       el("span", { class: "qr-glyph", "aria-hidden": "true" }));
+      const share = el("button", { class: "bar-icon share", type: "button", "aria-label": text("web.share"), onclick: openShare }, icon("qr"));
       setTip(share, text("web.share_tip"));
       bar.append(share);
     } else {
@@ -424,7 +475,7 @@
       setTip(home, view.bar.home_tip);
       bar.append(home);
       const name = el("span", { class: "bar-name bench-name", "aria-label": bench.name }, el("span", { class: "bench-title" }, bench.name));
-      if (bench.stars) name.append(el("span", { class: "stars", "aria-label": bench.stars_text }, stars(bench.stars, view.most)));
+      if (bench.stars) name.append(stars(bench.stars, view.most, bench.stars_text));
       bar.append(name);
       bar.append(el("div", { class: "bar-spring" }));
       const pills = el("nav", { class: "pills", "aria-label": view.bar.steps });
@@ -434,7 +485,7 @@
         const button = el("button", { class: "pill " + pill.state, type: "button", "aria-current": pill.state === "current" ? "step" : null,
                                       "aria-disabled": locked ? "true" : null, "aria-label": pill.tip.split("\n")[0],
                                       onclick: () => { if (!locked) ask("step", { index }); else showTipOf(button); } },
-                          el("span", { class: "pill-mark" }, pill.state === "done" ? "✓" : locked ? icon("padlock", "small") : String(index + 1)),
+                          el("span", { class: "pill-mark" }, pill.state === "done" ? icon("check") : locked ? icon("padlock", "small") : String(index + 1)),
                           el("span", { class: "pill-name" }, pill.name), el("span", { class: "pill-short" }, pill.short));
         setTip(button, pill.tip);
         pills.append(button);
@@ -446,14 +497,39 @@
     bar.append(languageBox(view));
   }
 
-  function stars(count, most) {
-    return "★".repeat(count) + "☆".repeat(Math.max(most - count, 0));
+  // The stars as icons (the filled star, the outline of a hollow one), the letters kept as the text a screen reader
+  // hears; with a label (the bar's, a cover card's), the run is one image named by it.
+  const FULL_STAR = "★", HOLLOW_STAR = "☆";
+
+  function starRun(run, label) {
+    const node = el("span", { class: "stars", role: label ? "img" : null, "aria-label": label || null },
+                    el("span", { class: "visually-hidden" }, run));
+    for (const letter of run) node.append(icon(letter === FULL_STAR ? "star" : "star_outline", letter === FULL_STAR ? "full" : "hollow"));
+    return node;
+  }
+
+  function stars(count, most, label) {
+    return starRun(FULL_STAR.repeat(count) + HOLLOW_STAR.repeat(Math.max(most - count, 0)), label);
+  }
+
+  // A run of the star letters arriving in a text the bridge wrote (a status line, a measure's value) drawn as icons.
+  function starify(node) {
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+    const found = [];
+    while (walker.nextNode()) if (/[★☆]/.test(walker.currentNode.nodeValue)) found.push(walker.currentNode);
+    for (const textNode of found) {
+      const parts = textNode.nodeValue.split(/([★☆]+)/);
+      textNode.replaceWith(...parts.filter(Boolean).map((part) => (/^[★☆]+$/.test(part) ? starRun(part) : document.createTextNode(part))));
+    }
+    return node;
   }
 
   // ---------------------------------------------------------------- the cover
   function drawCover(view) {
     const screen = document.getElementById("screen");
+    const entering = page.screen !== "cover";                       // a screen change: never a cover answered again
     page.screen = "cover";
+    page.entered = null;
     page.signature = null;
     page.nodes = {};
     closeCode();
@@ -466,12 +542,13 @@
     const restart = el("button", { class: "quiet-button restart", type: "button", onclick: confirmRestart,
                                    style: cover.restart ? null : "visibility:hidden" }, cover.restart_texts.command);
     setTip(restart, cover.restart_texts.tip);
-    const lede = el("section", { class: "lede" }, switcher, el("p", { class: "mode-line" }, cover.mode_line),
-                    el("p", { class: "purpose" }, cover.purpose), el("h1", { class: "cover-title" }, cover.title),
-                    el("p", { class: "lead" }, cover.lead), restart);
+    const lede = el("section", { class: "lede" }, el("p", { class: "purpose" }, cover.purpose), el("h1", { class: "cover-title" }, cover.title),
+                    el("p", { class: "lead" }, cover.lead), switcher, el("p", { class: "mode-line" }, cover.mode_line), restart);
     const journey = el("ol", { class: "journey" });
     cover.cards.forEach((card) => journey.append(coverCard(card)));
     const body = el("div", { class: "cover" }, el("div", { class: "cover-inner" }, lede, journey));
+    if (entering) enter(body, page.coverShown ? "enter" : "first");   // shown again, it enters; first shown, its cards one by one
+    page.coverShown = true;
     screen.replaceChildren(body);
     page.nodes = { cover: body, lede, journey };
     arrangeCover();
@@ -483,6 +560,15 @@
       coverObserver.disconnect();
       coverObserver.observe(body);
     }
+    // The title's block is placed from text heights measured now, maybe in a fallback face: again once the web faces
+    // have come (the observer sees the cover's box, not its texts' heights).
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => { if (page.nodes.cover === body) arrangeCover(); });
+      if (!coverFonts) {                                            // a face that comes later (a glyph first shown now)
+        coverFonts = true;
+        document.fonts.addEventListener("loadingdone", () => { if (page.screen === "cover") arrangeCover(); });
+      }
+    }
     const last = journey.querySelector(`[data-bench="${cover.last}"]`);
     if (last && document.activeElement === document.body) last.focus({ preventScroll: true });
   }
@@ -492,7 +578,7 @@
   // screen, from their usual row up to the one that holds the largest square picture (COVER.rowMost), and a taller card has
   // a larger picture and larger texts; the cards in the middle of the screen, the title a little above theirs. On a phone
   // (or a short or narrow window) the cover keeps style.css's own arrangement.
-  let coverObserver = null, coverFrame = 0;
+  let coverObserver = null, coverFrame = 0, coverFonts = false;
   function arrangeCover() {
     const nodes = page.nodes, cover = nodes.cover;
     if (!cover || !cover.isConnected || !cover.clientWidth) return;   // not on screen yet: its observer calls again
@@ -537,13 +623,13 @@
   function coverCard(card) {
     const picture = coverPicture(card.picture);
     const name = el("div", { class: "card-name" }, el("span", {}, card.title));
-    if (card.stars) name.append(el("span", { class: "stars", "aria-label": card.stars_text }, stars(card.stars, 3)));
+    if (card.stars) name.append(stars(card.stars, 3, card.stars_text));
     const track = el("ol", { class: "track" });
     card.track.forEach((stop, index) => {
       if (index) track.append(el("li", { class: "track-line " + (card.track[index - 1].state === "done" ? "lit" : ""), "aria-hidden": "true" }));
       const worth = stop.worth ? el("span", { class: "track-worth kind-" + stop.worth[1] }, stop.worth[0]) : null;
       track.append(el("li", { class: "stop " + stop.state, "aria-label": stop.tip },
-                      el("span", { class: "stop-mark", "aria-hidden": "true" }, stop.state === "done" ? "✓" : ""),
+                      el("span", { class: "stop-mark", "aria-hidden": "true" }, stop.state === "done" ? icon("check") : null),
                       el("span", { class: "stop-name" }, stop.name), worth));
     });
     const open = () => { if (!card.locked) ask("open", { bench: card.key }); else showTipOf(button); };
@@ -576,6 +662,7 @@
         continue;
       }
       const path = document.createElementNS(ns, mark.kind === "area" ? "polygon" : "polyline");
+      path.setAttribute("class", "role-" + mark.role);              // the frame (role "axis") is the card's rounded well instead
       path.setAttribute("points", mark.points.map(([x, y]) => sx(x).toFixed(2) + "," + sy(y).toFixed(2)).join(" "));
       path.setAttribute("fill", mark.kind === "area" ? mark.color : "none");
       path.setAttribute("stroke", mark.color);
@@ -594,7 +681,8 @@
     const dialog = document.getElementById("dialog");
     const cancel = el("button", { class: "quiet-button", type: "button", onclick: () => dialog.close() }, words.cancel);
     const confirm = el("button", { class: "danger-button", type: "button", onclick: () => { dialog.close(); ask("restart"); } }, words.confirm);
-    dialog.replaceChildren(el("h2", {}, words.title), el("p", {}, words.text), el("div", { class: "dialog-row" }, confirm, cancel));
+    dialog.replaceChildren(el("h2", {}, words.title), el("p", {}, words.text),
+                           el("div", { class: "dialog-row" }, cancel, confirm));    // the main command last, as share's
     dialog.showModal();
     cancel.focus();
   }
@@ -645,11 +733,15 @@
     const signature = [bench.key, bench.step_key, view.language, view.mode, layout,
                        bench.lab.controls.map((c) => c.key + ":" + c.kind).join(",")].join("|");
     let built = false;
+    const step = bench.key + "|" + bench.step_key;
     if (page.screen !== "bench" || signature !== page.signature) {
+      const entering = page.screen !== "bench" || page.entered !== step;   // a screen or a step that comes: not a language, a turn
       page.layout = layout;
       buildBench(view);
       page.signature = signature;
       page.screen = "bench";
+      page.entered = step;
+      if (entering) enterBench(page.nodes);
       built = true;
     }
     updateBench(view);
@@ -810,7 +902,7 @@
     body.addEventListener("scroll", () => fold(body, false), { passive: true });
     nodes.dock = body;
     const close = el("button", { class: "phone-icon sheet-close", type: "button", "aria-label": text("web.card.close"),
-                                 onclick: () => openSheet(false) }, text("panel.close_mark"));
+                                 onclick: () => openSheet(false) }, icon("close"));
     setTip(close, text("web.card.close"));
     nodes.sheet = el("div", { class: "sheet", id: "card-sheet", role: "dialog", tabindex: "-1", hidden: true },
                      el("div", { class: "sheet-head" }, title, close), nodes.card);
@@ -985,8 +1077,10 @@
       parts.value = el("span", { class: "slider-value" });
       parts.input = el("input", { class: "slider", type: "range", min: "0", step: "1", "aria-label": control.label });
       setTip(parts.input, control.shortcuts ? control.fine_tip : "");
-      parts.input.addEventListener("input", (event) => ask("control", { key: control.key, value: Number(event.target.value) },
-                                                          { transient: true, group: "slider:" + control.key }));
+      parts.input.addEventListener("input", (event) => {
+        sliderFill(parts.input);
+        ask("control", { key: control.key, value: Number(event.target.value) }, { transient: true, group: "slider:" + control.key });
+      });
       parts.input.addEventListener("pointerdown", () => { parts.dragging = true; });
       const release = () => { parts.dragging = false; };
       parts.input.addEventListener("pointerup", release);
@@ -1000,6 +1094,12 @@
     }
     page.nodes.controls[control.key] = parts;
     return group;
+  }
+
+  // The part of a slider's track travelled (style.css's --fill: WebKit draws it from there; Mozilla has its own progress).
+  function sliderFill(input) {
+    const top = Number(input.max) || 0;
+    input.style.setProperty("--fill", top > 0 ? (100 * Number(input.value) / top).toFixed(2) + "%" : "0%");
   }
 
   function valueText(value) {
@@ -1069,6 +1169,7 @@
       setTip(nodes.stageName, lab.stage);
     }
     nodes.status.textContent = lab.status;
+    starify(nodes.status);
     nodes.status.classList.toggle("ok", lab.status_kind === "ok");
     nodes.status.hidden = !lab.status;
     nodes.missing.textContent = lab.missing;
@@ -1143,6 +1244,7 @@
       parts.input.max = String(Math.max(control.top, 0));
       parts.input.disabled = control.top <= 0;
       if (!parts.dragging) parts.input.value = String(control.index);
+      sliderFill(parts.input);
     }
     if (parts.line) parts.line.textContent = control.line || "";
   }
@@ -1173,7 +1275,7 @@
     const title = el("div", { class: "metric-title" });
     if (item.color) title.append(el("span", { class: "metric-dot", style: "color:" + item.color }, "●"));
     title.append(el("span", { html: item.title }));
-    const line = el("div", { class: "metric-line" }, el("span", { class: "metric-value kind-" + item.kind, html: item.value }));
+    const line = el("div", { class: "metric-line" }, starify(el("span", { class: "metric-value kind-" + item.kind, html: item.value })));
     if (item.detail) line.append(el("span", { class: "metric-detail kind-" + item.detail_kind, html: item.detail }));
     const node = el("div", { class: "metric" + (item.strong ? " strong" : ""), tabindex: "0", dataset: { tap: "tip" } }, title, line);
     setTip(node, item.tip);
@@ -1246,6 +1348,7 @@
   // On a screen of 1.25 or 1.5 device pixels per CSS pixel, a box's edge may fall between two device pixels (the bar is
   // 49 CSS pixels high): the canvas is moved by that fraction, so that its pixels lie on the screen's and stay crisp.
   function snap(canvas, exact) {
+    page.snapped = exact;
     canvas.style.transform = "";
     if (!exact) return;
     const ratio = window.devicePixelRatio || 1;
@@ -1390,7 +1493,7 @@
     const index = Math.min(page.codeFunction, reading.functions.length - 1);
     const fn = reading.functions[index];
     const close = el("button", { class: "code-close", type: "button", "aria-label": text("panel.close"),
-                                 onclick: () => ask("code", { open: false }) }, text("panel.close_mark"));
+                                 onclick: () => ask("code", { open: false }) }, icon("close"));
     setTip(close, text("panel.close"));
     const head = el("div", { class: "code-head" }, icon("book"), el("span", { class: "code-chip" }, text("panel.python")),
                     el("h3", { class: "code-title" }, reading.title[language] || reading.title.en), close);
@@ -1400,7 +1503,7 @@
                                     onchange: (event) => { page.codeFunction = Number(event.target.value); drawCode(page.view.bench.code); } });
       setTip(select, text("panel.functions_tip"));
       reading.functions.forEach((each, i) => select.append(el("option", { value: String(i), selected: i === index }, each.name)));
-      body.append(select);
+      body.append(el("span", { class: "select-wrap" }, select));    // its arrow drawn (style.css)
     }
     const note = index === 0 ? (reading.note[language] || reading.note.en) : text("panel.related_function");
     if (note) body.append(el("p", { class: "code-note" }, note));
@@ -1595,6 +1698,8 @@
     document.documentElement.lang = language === "pt_BR" ? "pt-BR" : "en";
     start();
   }, (error) => {
-    document.getElementById("loading-stage").textContent = String(error);
+    const box = document.getElementById("loading-error");               // no catalog yet: the error as it came
+    box.textContent = String(error);
+    box.hidden = false;
   });
 })();

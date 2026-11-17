@@ -11,18 +11,23 @@
 <meta name="color-scheme" content="dark">
 <title>Statistical Fundamentals</title>
 <link rel="icon" href="icons/app.svg" type="image/svg+xml">
-<link rel="stylesheet" href="theme.css?v=b75cd0c1034e">
-<link rel="stylesheet" href="style.css?v=b75cd0c1034e">
+<link rel="preload" href="fonts/selawk.woff2?v=9a2c3008f344" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="theme.css?v=9a2c3008f344">
+<link rel="stylesheet" href="style.css?v=9a2c3008f344">
 </head>
-<body data-build="b75cd0c1034e" data-pyodide="https://cdn.jsdelivr.net/pyodide/v0.29.5/full/" data-version="0.2.0">
-<div id="loading" class="loading" role="status" aria-live="polite">
+<body data-build="9a2c3008f344" data-pyodide="https://cdn.jsdelivr.net/pyodide/v0.29.5/full/" data-version="0.2.0">
+<div id="loading" class="loading">
   <div class="loading-card">
-    <img class="loading-mark" src="icons/app.svg" alt="" width="40" height="40">
+    <img class="loading-mark" src="icons/app.svg" alt="" width="56" height="56">
     <h1 class="loading-title" id="loading-title"></h1>
-    <div class="loading-bar" aria-hidden="true"><div class="loading-fill" id="loading-fill"></div></div>
-    <p class="loading-stage" id="loading-stage"></p>
+    <ol class="loading-steps" id="loading-steps" aria-hidden="true"></ol>
+    <div class="loading-meter" aria-hidden="true">
+      <div class="loading-bar"><div class="loading-fill" id="loading-fill"></div></div>
+      <span class="loading-percent" id="loading-percent"></span>
+    </div>
+    <p class="loading-stage visually-hidden" id="loading-stage" role="status" aria-live="polite"></p>
     <p class="loading-note" id="loading-note"></p>
-    <p class="loading-error" id="loading-error" hidden></p>
+    <p class="loading-error" id="loading-error" role="alert" hidden></p>
     <button class="quiet-button" id="loading-retry" type="button" hidden></button>
   </div>
 </div>
@@ -33,6 +38,6 @@
 <div id="tip" class="tip" role="tooltip" hidden></div>
 <div id="toast" class="toast" role="alert" hidden></div>
 <dialog id="dialog" class="dialog"></dialog>
-<script src="app.js?v=b75cd0c1034e"></script>
+<script src="app.js?v=9a2c3008f344"></script>
 </body>
 </html>

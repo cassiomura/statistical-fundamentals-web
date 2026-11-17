@@ -11,13 +11,16 @@
 <meta name="color-scheme" content="dark">
 <title>Statistical Fundamentals</title>
 <link rel="icon" href="icons/app.svg" type="image/svg+xml">
-<link rel="stylesheet" href="theme.css?v=b75cd0c1034e">
+<link rel="stylesheet" href="theme.css?v=9a2c3008f344">
 <style>
+  @font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=9a2c3008f344") format("woff2"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=9a2c3008f344") format("woff2"); font-weight: 700; font-display: swap; }
   html, body { height: 100%; margin: 0; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   body { display: grid; place-items: center; background: var(--theme-deep); color: var(--theme-text);
-         font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; text-align: center; padding: 16px; box-sizing: border-box; }
+         font-family: "Selawik", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; text-align: center; padding: 16px; box-sizing: border-box; }
   main { max-width: 760px; }
-  h1 { font-size: clamp(24px, 4vw, 42px); margin: 0 0 8px; }
+  h1 { font-size: clamp(24px, 4vw, 42px); margin: 0 0 8px; letter-spacing: -0.02em; text-wrap: balance; }
   p { color: var(--theme-secondary); font-size: clamp(14px, 1.8vw, 19px); margin: 0 0 22px; }
   #code { display: inline-block; padding: 18px; background: #EDF2F7; border-radius: 14px; line-height: 0; }
   #code img, #code canvas { width: min(64vh, 80vw) !important; height: auto !important; image-rendering: pixelated; }
@@ -44,7 +47,7 @@
     if (kept.language === "en" || kept.language === "pt_BR") language = kept.language;
     else if ((navigator.language || "").toLowerCase().startsWith("pt")) language = "pt_BR";
   } catch (error) { /* nothing kept */ }
-  fetch("texts.json?v=b75cd0c1034e").then((response) => response.json()).then((catalogs) => {
+  fetch("texts.json?v=9a2c3008f344").then((response) => response.json()).then((catalogs) => {
     const text = (key, params) => {
       let found = (catalogs[language] || {})[key] ?? catalogs.en[key] ?? "[" + key + "]";
       if (params) found = found.replace(/\{(\w*)\}/g, (whole, name) => (name in params ? String(params[name]) : whole));

@@ -48,6 +48,8 @@
   --palette-background: #151B24;
   --palette-blue: #58C4DD;
   --palette-card: #1A212A;
+  --palette-chosen: #3A4757;
+  --palette-chosen-ring: #7C8EA3;
   --palette-dark-grey: #434A51;
   --palette-gold: #F0AC5F;
   --palette-grey: #8A939C;
@@ -60,6 +62,7 @@
   --palette-prose: #D5DDE6;
   --palette-purple: #9A72AC;
   --palette-red: #FC6255;
+  --palette-shadow: #05080C;
   --palette-slate: #C3CCD5;
   --palette-teal: #5CD0B3;
   --palette-track: #222B35;
