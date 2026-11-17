@@ -11,10 +11,10 @@
 <meta name="color-scheme" content="dark">
 <title>Statistical Fundamentals</title>
 <link rel="icon" href="icons/app.svg" type="image/svg+xml">
-<link rel="stylesheet" href="theme.css?v=81a8243d8d4b">
+<link rel="stylesheet" href="theme.css?v=cdd2ab3ca5f5">
 <style>
-  @font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=81a8243d8d4b") format("woff2"); font-weight: 400; font-display: swap; }
-  @font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=81a8243d8d4b") format("woff2"); font-weight: 700; font-display: swap; }
+  @font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=cdd2ab3ca5f5") format("woff2"); font-weight: 400; font-display: swap; }
+  @font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=cdd2ab3ca5f5") format("woff2"); font-weight: 700; font-display: swap; }
   html, body { height: 100%; margin: 0; }
   html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   body { display: grid; place-items: center; background: var(--theme-deep); color: var(--theme-text);
@@ -47,7 +47,7 @@
     if (kept.language === "en" || kept.language === "pt_BR") language = kept.language;
     else if ((navigator.language || "").toLowerCase().startsWith("pt")) language = "pt_BR";
   } catch (error) { /* nothing kept */ }
-  fetch("texts.json?v=81a8243d8d4b").then((response) => response.json()).then((catalogs) => {
+  fetch("texts.json?v=cdd2ab3ca5f5").then((response) => response.json()).then((catalogs) => {
     const text = (key, params) => {
       let found = (catalogs[language] || {})[key] ?? catalogs.en[key] ?? "[" + key + "]";
       if (params) found = found.replace(/\{(\w*)\}/g, (whole, name) => (name in params ? String(params[name]) : whole));
