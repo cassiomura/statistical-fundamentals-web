@@ -7,26 +7,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js https://cdn.jsdelivr.net/pyodide/v0.29.5/full/ 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' https://cdn.jsdelivr.net/pyodide/v0.29.5/full/; img-src 'self' data: blob:; media-src 'self'; style-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>Statistical Fundamentals</title>
 <link rel="icon" href="icons/app.svg" type="image/svg+xml">
-<link rel="stylesheet" href="theme.css?v=cdd2ab3ca5f5">
-<style>
-  @font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=cdd2ab3ca5f5") format("woff2"); font-weight: 400; font-display: swap; }
-  @font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=cdd2ab3ca5f5") format("woff2"); font-weight: 700; font-display: swap; }
-  html, body { height: 100%; margin: 0; }
-  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-  body { display: grid; place-items: center; background: var(--theme-deep); color: var(--theme-text);
-         font-family: "Selawik", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; text-align: center; padding: 16px; box-sizing: border-box; }
-  main { max-width: 760px; }
-  h1 { font-size: clamp(24px, 4vw, 42px); margin: 0 0 8px; letter-spacing: -0.02em; text-wrap: balance; }
-  p { color: var(--theme-secondary); font-size: clamp(14px, 1.8vw, 19px); margin: 0 0 22px; }
-  #code { display: inline-block; padding: 18px; background: #EDF2F7; border-radius: 14px; line-height: 0; }
-  #code img, #code canvas { width: min(64vh, 80vw) !important; height: auto !important; image-rendering: pixelated; }
-  .address { margin-top: 20px; font-size: clamp(15px, 2.2vw, 24px); color: var(--theme-accent); word-break: break-all; }
-  a { color: var(--theme-secondary); display: inline-block; margin-top: 18px; padding: 10px; }
-</style>
+<link rel="stylesheet" href="theme.css?v=84e70223ca2e">
+<link rel="stylesheet" href="qr.css?v=84e70223ca2e">
 </head>
 <body>
 <main>
@@ -37,36 +25,6 @@
   <a href="./" id="back"></a>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script>
-"use strict";
-(() => {
-  const address = new URL(".", location.href).href;
-  let language = "en";
-  try {
-    const kept = JSON.parse(localStorage.getItem("statistical-fundamentals") || "{}") || {};
-    if (kept.language === "en" || kept.language === "pt_BR") language = kept.language;
-    else if ((navigator.language || "").toLowerCase().startsWith("pt")) language = "pt_BR";
-  } catch (error) { /* nothing kept */ }
-  fetch("texts.json?v=cdd2ab3ca5f5").then((response) => response.json()).then((catalogs) => {
-    const text = (key, params) => {
-      let found = (catalogs[language] || {})[key] ?? catalogs.en[key] ?? "[" + key + "]";
-      if (params) found = found.replace(/\{(\w*)\}/g, (whole, name) => (name in params ? String(params[name]) : whole));
-      return found;
-    };
-    document.documentElement.lang = language === "pt_BR" ? "pt-BR" : "en";
-    document.getElementById("title").textContent = text("web.qr.title");
-    document.getElementById("lead").textContent = text("web.qr.lead");
-    document.getElementById("back").textContent = text("web.qr.back");
-    document.getElementById("address").textContent = address;
-    const box = document.getElementById("code");
-    box.setAttribute("aria-label", address);
-    try {
-      new QRCode(box, { text: address, width: 512, height: 512, colorDark: "#10151C", colorLight: "#EDF2F7", correctLevel: QRCode.CorrectLevel.M });
-    } catch (error) {
-      box.textContent = text("web.qr.failed", { error: error.message });
-    }
-  });
-})();
-</script>
+<script src="qr.js?v=84e70223ca2e"></script>
 </body>
 </html>

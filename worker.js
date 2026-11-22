@@ -11,8 +11,9 @@
  *
  * Messages from the page: {type: "start", build}, then {type: "ask", id, request} (a request of bridge.Bridge.handle).
  * Messages to the page: {type: "progress", stage, fraction}, {type: "ready"}, {type: "failed", error}, and
- * {type: "reply", id, text, meta, pixels} (the view as JSON text, the figure's geometry as JSON text, and its RGBA
- * pixels as a transferred ArrayBuffer, or null when the picture on the page is still the right one).
+ * {type: "reply", id, text, meta, pixels, blockPixels} (the view as JSON text, the figure's geometry as JSON text, and
+ * its RGBA pixels as a transferred ArrayBuffer, or null when the picture on the page is still the right one; the pixels
+ * of each block of the column drawn anew, {key: ArrayBuffer}, transferred too, their geometry in meta.blocks).
  */
 "use strict";
 const PYODIDE = "https://cdn.jsdelivr.net/pyodide/v0.29.5/full/";
@@ -50,42 +51,70 @@ async function start(build) {
   bridge = pyodide.pyimport("bridge").Bridge();
 }
 
+function copied(array) {
+  // An RGBA picture of the bridge (a NumPy array) copied out of WebAssembly's memory into an ArrayBuffer.
+  const view = array.getBuffer("u8clamped");
+  try {
+    return new Uint8ClampedArray(view.data).buffer;
+  } finally {
+    view.release();
+    array.destroy();
+  }
+}
+
 function ask(id, request) {
   const result = bridge.handle(JSON.stringify(request));
   let text, meta, pixels = null;
+  const blockPixels = {};
+  const transfer = [];
   try {
     text = result.get(0);
     meta = result.get(2);
     const array = result.get(1);
     if (array !== undefined && array !== null) {
-      const view = array.getBuffer("u8clamped");
+      pixels = copied(array);
+      transfer.push(pixels);
+    }
+    const blocks = result.get(3);                                   // [(key, pixels)] of the blocks drawn anew
+    if (blocks !== undefined && blocks !== null) {
       try {
-        pixels = new Uint8ClampedArray(view.data).buffer;           // a copy out of WebAssembly's memory
+        for (let i = 0; i < blocks.length; i++) {
+          const pair = blocks.get(i);
+          try {
+            const buffer = copied(pair.get(1));
+            blockPixels[pair.get(0)] = buffer;
+            transfer.push(buffer);
+          } finally {
+            pair.destroy();
+          }
+        }
       } finally {
-        view.release();
-        array.destroy();
+        blocks.destroy();
       }
     }
   } finally {
     result.destroy();
   }
-  postMessage({ type: "reply", id, text, meta, pixels }, pixels ? [pixels] : []);
+  postMessage({ type: "reply", id, text, meta, pixels, blockPixels }, transfer);
 }
 
 onmessage = async (event) => {
-  const message = event.data;
+  const message = event.data;                                       // only the page that made this worker can post here
+  if (!message || typeof message !== "object") return;
   if (message.type === "start") {
+    if (pyodide !== null) return;                                   // started once
+    pyodide = false;
     try {
       await start(message.build);
       postMessage({ type: "ready" });
     } catch (error) {
       postMessage({ type: "failed", error: String(error && error.message ? error.message : error) });
     }
-  } else if (message.type === "ask") {
+  } else if (message.type === "ask" && bridge !== null && Number.isInteger(message.id)) {
     try {
       ask(message.id, message.request);
     } catch (error) {
-      postMessage({ type: "reply", id: message.id, text: null, meta: "{}", pixels: null,
+      postMessage({ type: "reply", id: message.id, text: null, meta: "{}", pixels: null, blockPixels: {},
                     error: String(error && error.stack ? error.stack : error) });
     }
   }

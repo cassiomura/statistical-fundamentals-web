@@ -6,20 +6,26 @@
  * light on a card's top edge, a soft shadow under it), generous spacing, a value's state in one colour and weight
  * wherever it is shown (KIND_INKS). The colours are theme.css's custom properties, written by web/build.py from
  * fundamentals_ui/theme.py and palette.py: none is defined here. One family (Selawik, the widths of Segoe UI, and the
- * symbols it lacks in a second face), one type scale (--fs-*: six sizes and the cover's title) and three radii
+ * symbols it lacks in a second face; the problem card's goal and bounds in a serif, STIXGeneral), one type scale (--fs-*: six sizes and the cover's title) and three radii
  * (--radius-*: 6 a field, 8 a command, 12 a card or a dialog; pills round), named once below. Hover styling stands in
  * (hover: hover), motion in (prefers-reduced-motion) only. A bench on a phone is `.bench.dense` (the dock, the foot,
  * the sheet, the measures, shared), `.portrait` or `.compact` (landscape) for where they stand; its bar is
  * `.bar.in-bench.phone`; touch targets are 44 px, 8 px apart: the phone's part, at the end, is kept as it is.
  */
-@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=cdd2ab3ca5f5") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=cdd2ab3ca5f5") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=cdd2ab3ca5f5") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=84e70223ca2e") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=84e70223ca2e") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=84e70223ca2e") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 /* the glyphs Selawik lacks (Greek, subscripts, the minus sign, arrows): DejaVu's, as the figure draws them, the
    subscripts lowered under the baseline (build.lower_subscripts); every address stamped ?v=BUILD by web/build.py, the
    preload of index.html the same address */
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=cdd2ab3ca5f5") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=cdd2ab3ca5f5") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=84e70223ca2e") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=84e70223ca2e") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+/* the problem card's serif: matplotlib's own STIXGeneral (regular, italic, bold, bold italic), cut by web/build.py to the
+   glyphs the problems of the benches write (build.serif_characters), its licence beside it (fonts/LICENSE_STIX.txt) */
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif.ttf?v=84e70223ca2e") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-italic.ttf?v=84e70223ca2e") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold.ttf?v=84e70223ca2e") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold-italic.ttf?v=84e70223ca2e") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
 
 :root {
   --window: var(--theme-deep);
@@ -37,7 +43,6 @@
   --ok: var(--palette-teal);
   --warning: var(--palette-gold);
   --error: var(--palette-red);
-  --star: var(--palette-gold);           /* the stars a bench earned, the same gold in the bar, the cover, the strip and the foot */
   --track: var(--palette-track);
   --hover: var(--palette-hover);
   --pressed: var(--palette-pressed);
@@ -46,6 +51,7 @@
   --chosen-ring: var(--palette-chosen-ring);
   --face: "Selawik", "Lab Symbols", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
   --number-face: Cambria, "Cambria Math", Georgia, "Times New Roman", serif;
+  --serif-face: "Lab Serif", "Lab Symbols", Cambria, "Times New Roman", serif;    /* the problem's goal and bounds (D4) */
   --code-face: Consolas, "SFMono-Regular", Menlo, "Liberation Mono", monospace;
   /* the type scale: every size of the desktop's page is one of these (the cover's title aside) */
   --fs-caption: 11.5px;
@@ -65,11 +71,12 @@
   --edge-light: color-mix(in srgb, var(--text) 6%, transparent);
   --depth-card: inset 0 1px 0 var(--edge-light), 0 1px 2px color-mix(in srgb, var(--shade) 35%, transparent),
                 0 12px 24px -16px color-mix(in srgb, var(--shade) 65%, transparent);
-  --depth-lifted: inset 0 1px 0 color-mix(in srgb, var(--text) 5.5%, transparent), 0 1px 2px color-mix(in srgb, var(--shade) 30%, transparent),
-                  0 22px 40px -26px color-mix(in srgb, var(--shade) 80%, transparent);
   --depth-float: inset 0 1px 0 var(--edge-light), 0 2px 6px color-mix(in srgb, var(--shade) 30%, transparent),
                  0 18px 40px -12px color-mix(in srgb, var(--shade) 65%, transparent);
   --depth-recess: inset 0 1px 2px color-mix(in srgb, var(--shade) 42%, transparent);
+  /* a card's soft shadow (gui/widgets.CardShadows: a Gaussian of 7 px, so a blur of 14, 4 px under the card, the shadow's
+     ink at 170 / 255): the received card, the step's blocks, the cover's cards */
+  --depth-soft: inset 0 1px 0 var(--edge-light), 0 4px 14px color-mix(in srgb, var(--shade) 67%, transparent);
   --column: 312px;
   --inset: 20px;
   --bar: 48px;
@@ -95,11 +102,12 @@ body.busy { cursor: progress; }
 .icon { display: inline-block; width: 18px; height: 18px; flex: none; background: currentColor;
         -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
 .icon.small { width: 12px; height: 12px; }
-/* the stars: icons in their own gold, the hollow ones an outline in the disabled ink (the shape tells them apart too);
-   the letters they replace are kept as the text a reader of the screen hears */
-.stars { display: inline-flex; align-items: center; gap: 0.12em; color: var(--star); white-space: nowrap; vertical-align: -0.08em; }
-.stars .icon { width: 0.9em; height: 0.9em; }
-.stars .icon.hollow { color: var(--disabled); }
+/* the check of a bench passed (gui/step_bar.PassMark, paint_badge): the check of a step done in its green disc, beside
+   the bar's bench name (18 px) and after a passed card's name on the cover (16 px); an image, not a command */
+.pass-mark { flex: none; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
+             background: var(--theme-ready); color: var(--on-accent); vertical-align: -0.15em; }
+.pass-mark .icon { width: 62%; height: 62%; }
+.card-name .pass-mark { width: 16px; height: 16px; align-self: center; }
 
 /* ------------------------------------------------------------------ the loading screen: the five stages, the overall share */
 .loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--surface); padding: 16px; }
@@ -137,7 +145,8 @@ body.busy { cursor: progress; }
        box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent), 0 10px 22px -14px color-mix(in srgb, var(--shade) 80%, transparent); }
 .brand { display: flex; align-items: center; gap: 6px; padding-left: 4px; min-width: 0; flex: 0 1 auto; }
 .bar-name { font-weight: 600; font-size: var(--fs-body); white-space: nowrap; padding: 0 8px 0 6px; }
-.bar-name .stars { margin-left: 8px; }
+.bar > .pass-mark { margin: 0 6px 0 -2px; }
+.bar > .busy-note { margin-right: 6px; box-shadow: none; }      /* the desktop's busy note: in the bar, never over the figure */
 .bar-spring { flex: 1; min-width: 4px; }
 .home { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 4px 10px; color: var(--muted);
         background: transparent; border: none; border-radius: var(--radius-command); }
@@ -224,7 +233,6 @@ body.busy { cursor: progress; }
 .lead { color: var(--muted); font-size: var(--fs-large); line-height: 1.55; margin: 0; text-wrap: pretty; }
 .mode-switch { margin-top: 28px; }
 .mode-switch .segment { min-height: 36px; padding: 4px 18px; font-size: var(--fs-body); }
-.mode-line { color: var(--muted); margin: 10px 0 0; font-size: var(--fs-small); text-wrap: pretty; }
 .restart { margin-top: 14px; padding-left: 0; }
 .journey { flex: 0 1 860px; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px;
            position: relative; }
@@ -240,7 +248,7 @@ body.busy { cursor: progress; }
 .bench-card.locked > .node::after { border-style: dashed; border-color: var(--disabled); }
 /* the card's surface: beside the rail, with its light and shadow; the focus ring follows it, never the rail */
 .bench-card::after { content: ""; position: absolute; inset: 0 0 0 64px; border-radius: var(--radius-card); background: var(--card); z-index: -1;
-                     box-shadow: var(--depth-lifted); outline: 1px solid transparent; outline-offset: -1px; }
+                     box-shadow: var(--depth-soft); outline: 1px solid transparent; outline-offset: -1px; }
 .bench-card:focus-visible { outline: none; }
 .bench-card:focus-visible::after { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* the picture: rounded, in a well a tone under the card, a quiet inner hairline (its frame, the mark of role "axis", hidden) */
@@ -249,7 +257,7 @@ body.busy { cursor: progress; }
                        outline: 1px solid color-mix(in srgb, var(--text) 9%, transparent); outline-offset: -1px; }
 .picture .role-axis { display: none; }
 .card-texts { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.card-name { font-size: var(--fs-heading); font-weight: 700; display: flex; align-items: baseline; gap: 12px; }
+.card-name { font-size: var(--fs-heading); font-weight: 600; display: flex; align-items: baseline; gap: 12px; }
 .challenge { color: var(--muted); font-size: var(--fs-body); text-wrap: pretty; }
 .arrow { flex: none; color: var(--accent); font-size: var(--fs-display); opacity: 0.4; }
 .bench-card:focus-visible .arrow { opacity: 1; }
@@ -271,7 +279,8 @@ body.busy { cursor: progress; }
 .stop.locked .stop-mark { border-style: dashed; border-color: var(--disabled); }
 .stop-name { font-size: var(--fs-small); color: var(--prose); white-space: nowrap; }
 .stop.locked .stop-name { color: var(--disabled); }
-.track-worth { font-size: var(--fs-caption); color: var(--muted); font-variant-numeric: tabular-nums; }
+.track-worth { font-size: var(--fs-caption); color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.track.calm .track-worth { display: none; }       /* their texts would crowd the track: none (app.js calmTracks) */
 .track-worth.kind-error { color: color-mix(in srgb, var(--error) 55%, var(--muted)); }
 .track-worth.kind-warning { color: color-mix(in srgb, var(--warning) 55%, var(--muted)); }
 .track-worth.kind-ok { color: color-mix(in srgb, var(--ok) 55%, var(--muted)); }
@@ -282,6 +291,7 @@ body.busy { cursor: progress; }
    the thread from the first node to the last; a faint glow behind the journey */
 .cover.arranged { padding: 32px 36px;
                   background: radial-gradient(920px 540px at 68% 46%, color-mix(in srgb, var(--palette-lift) 70%, var(--surface)) 0%, var(--surface) 72%); }
+.cover.arranged.tight { padding-top: 12px; padding-bottom: 12px; }   /* gui/cover.PAGE_TIGHT: four cards at 1280 x 720 */
 .cover.arranged .cover-inner { flex: 1 1 auto; max-width: 1240px; margin: 0 auto; align-items: flex-start; }
 .cover.arranged .lede { flex: none; width: var(--lede); min-width: 0; padding-top: var(--lede-top); }
 .cover.arranged .cover-title { font-size: clamp(34px, calc(var(--lede) * 0.13), 50px); }
@@ -302,22 +312,39 @@ body.busy { cursor: progress; }
 .bench { flex: 1; min-width: 0; min-height: 0; display: flex; background: var(--card); position: relative; }
 .column { flex: none; width: var(--column); display: flex; flex-direction: column; background: var(--surface); min-height: 0; }
 /* the desktop's column: a hairline light and a soft shadow at its edge over the stage */
-.bench.desktop .column { position: relative; z-index: 2; border-right: 1px solid transparent;
+.bench.desktop .column { position: relative; z-index: 2; outline: 1px solid transparent; outline-offset: -1px;   /* no room taken */
                          box-shadow: 1px 0 0 color-mix(in srgb, var(--text) 4%, transparent),
                                      14px 0 30px -22px color-mix(in srgb, var(--shade) 85%, transparent); }
-.column-head { flex: none; padding: 16px var(--inset) 0; }
-.lab-title { margin: 0 0 12px; font-size: var(--fs-heading); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.card-slot { height: 154px; }
-.card { background: var(--raised); border-radius: var(--radius-card); padding: 10px 12px; box-shadow: var(--depth-card);
+.column-head { flex: none; padding: 12px var(--inset) 0; }       /* gui/lab_views.TITLE_TOP */
+.lab-title { margin: 0 0 10px; font-size: var(--fs-heading); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* the card's slot: the bench's (app.js sizeSlot, gui/lab_views.CardSlot.room), the same height in its three steps; a
+   card of fewer rows top-aligned in it; the probe that measures it is laid out unseen */
+.card-slot { height: 154px; position: relative; }
+.card { background: var(--raised); border-radius: var(--radius-card); padding: 10px 12px; box-shadow: var(--depth-soft);
         outline: 1px solid transparent; outline-offset: -1px; }
-.card-heading { color: var(--accent); font-size: var(--fs-caption); font-weight: 600; letter-spacing: 0.02em; margin-bottom: 5px; }
+.card.probe { position: absolute; left: 0; right: 0; top: 0; visibility: hidden; pointer-events: none; }
+/* its heading, and what the response is quietly at the right end of its line (a row of the kind "aside") */
+.card-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; color: var(--accent);
+                font-size: var(--fs-caption); font-weight: 600; letter-spacing: 0.02em; margin-bottom: 5px; }
+.card-aside { color: var(--muted); font-weight: 400; letter-spacing: 0; text-align: right; }
 .card-row { display: flex; justify-content: space-between; gap: 10px; font-size: var(--fs-small); padding: 1px 0; }
 .card-label { color: var(--muted); }
 .card-value { text-align: right; font-variant-numeric: tabular-nums; }
-.rule { height: 1px; background: var(--border); margin-top: 12px; }
+/* the problem in its standard form (gui/lab_views.problem_cells): its words in a muted column as wide as the widest,
+   what they govern in the serif, the goal in the heading's size and semibold, the bounds in the body's, each variable
+   in italics (app.js mathematics) */
+.card-rows.problem { display: table; width: 100%; border-spacing: 0; }
+.problem-row { display: table-row; }
+.problem-word { display: table-cell; width: 1%; padding-right: 10px; white-space: nowrap; vertical-align: baseline; color: var(--muted);
+                font-size: var(--fs-small); }
+.problem-value { display: table-cell; vertical-align: baseline; color: var(--text); font-family: var(--serif-face); line-height: 1.32; }
+.problem-value.goal { font-size: var(--fs-heading); font-weight: 600; }
+.problem-value.bound { font-size: var(--fs-body); }
+.problem-value i { font-style: italic; }
+.rule { height: 1px; background: var(--border); margin-top: 10px; }    /* RULE_GAP */
 /* the controls' block scrolls only when even a short window's column (below) cannot hold it: then its lower edge fades
    while more lies under it (.more, set by app.js's fold) and its thumb is in the disabled ink (4.86:1 on the column) */
-.column-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px var(--inset) 8px; display: flex; flex-direction: column; gap: 15px;
+.column-body { flex: 1; min-height: 0; overflow-y: auto; padding: 10px var(--inset) 8px; display: flex; flex-direction: column; gap: 12px;
                scrollbar-width: thin; scrollbar-color: var(--disabled) transparent; }
 .column-body::-webkit-scrollbar { width: 8px; }
 .column-body::-webkit-scrollbar-thumb { background: var(--disabled); border-radius: var(--radius-round); }
@@ -325,10 +352,18 @@ body.busy { cursor: progress; }
                                    mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); }
 .column-foot { flex: none; padding: 10px var(--inset) 12px calc(var(--inset) - 10px); display: flex; flex-direction: column; gap: 6px;
                padding-bottom: max(12px, env(safe-area-inset-bottom)); }
-.column-foot > .status, .column-foot > .missing, .column-foot > .filled { margin-left: 10px; }
+.column-foot > .status, .column-foot > .filled { margin-left: 10px; }
+/* Restore, and View code at its right (gui/lab_views.place_link: a columned step has no strip) */
+.foot-links { display: flex; align-items: center; min-width: 0; }
+.foot-links > .restore { align-self: center; }
+.foot-spring { flex: 1; min-width: 4px; }
 
 .control { display: flex; flex-direction: column; gap: 7px; }
 .control-label { color: var(--muted); font-size: var(--fs-small); font-weight: 600; }
+/* a control's label with the slim copies of the commands placed on its line (gui/lab_views.line_commands, SLIM_HEIGHT) */
+.label-line { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.chip.slim { min-height: 24px; padding: 0 10px; font-size: var(--fs-small); gap: 5px; }
+.chip.slim .icon.mark { width: 14px; height: 14px; }
 .column-segmented { display: flex; flex-wrap: wrap; align-self: flex-start; max-width: 100%; }
 .column-segmented .segment { flex: 1 0 auto; }
 /* options with icons (lab_views.ColumnSegmented): as wide as the column; icons beside the names while the row holds
@@ -339,10 +374,6 @@ body.busy { cursor: progress; }
 .column-segmented.marked.stacked { flex-direction: column; flex-wrap: nowrap; }
 .column-segmented.marked.stacked .segment { justify-content: flex-start; }
 .picks-line { display: flex; }
-/* a control's line (a method's: "Gradient · follows the slope from x₀") wraps in the desktop's column, never cut; the
-   phone's dock keeps it on one line (.bench.dense) */
-.control-line { color: var(--muted); font-size: var(--fs-small); min-height: 1.3em; white-space: normal; text-wrap: pretty; }
-.bench.dense .control-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-wrap: nowrap; }
 .typed-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .symbol { font-family: var(--number-face); font-style: italic; font-size: var(--fs-heading); }
 .number { width: 64px; min-height: 36px; padding: 3px 8px; font-family: var(--number-face); font-size: var(--fs-large); color: var(--text); text-align: right;
@@ -387,7 +418,7 @@ body.busy { cursor: progress; }
 .featured-detail { color: var(--muted); font-size: var(--fs-small); min-height: 1.3em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .transport { display: flex; flex-direction: column; gap: 6px; }
 .transport-icons { display: flex; gap: 8px; }
-.transport-button { width: 40px; height: 40px; border-radius: var(--radius-command); display: grid; place-items: center; background: var(--track);
+.transport-button { width: 36px; height: 36px; border-radius: var(--radius-command); display: grid; place-items: center; background: var(--track);
                     border: 1px solid var(--track); color: var(--text); padding: 0; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 5%, transparent); }
 .transport-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .transport-button:disabled { background: transparent; border-color: var(--track); color: var(--disabled); cursor: default; box-shadow: none; }
@@ -408,7 +439,6 @@ body.busy { cursor: progress; }
 .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .status { color: var(--warning); font-size: var(--fs-small); margin: 0; }
 .status.ok { color: var(--ok); }
-.missing { color: var(--muted); font-size: var(--fs-small); margin: 0; }
 .filled { min-height: 44px; padding: 8px 16px; border-radius: var(--radius-command); border: 2px solid var(--accent); background: var(--accent);
           color: var(--on-accent); font-size: var(--fs-large); font-weight: 600;
           box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 32%, transparent), 0 10px 22px -14px color-mix(in srgb, var(--accent) 50%, transparent); }
@@ -416,6 +446,11 @@ body.busy { cursor: progress; }
 .filled:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .filled[aria-pressed="true"] { background: var(--accent-hover); border-color: var(--text); }
 .filled.disabled { color: var(--disabled); background: var(--track); border-color: var(--track); cursor: default; box-shadow: none; }
+/* the lab's own command while "Next bench" stands under it (gui/lab_views.fit_filled, DEMOTED_HEIGHT): outlined, in the
+   body's type, so that the two hold where the one stood */
+.filled.demoted, .filled.demoted[aria-pressed="true"] { min-height: 30px; padding: 3px 14px; background: transparent; color: var(--accent);
+                                                        border: 1px solid var(--accent); font-size: var(--fs-body); box-shadow: none; }
+.filled.demoted.disabled { color: var(--disabled); border-color: var(--track); }
 /* it cannot be pressed but takes the focus (its tooltip says what is missing): the same ring */
 .filled.disabled:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .restore { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 5px 10px; color: var(--muted);
@@ -425,6 +460,7 @@ body.busy { cursor: progress; }
   .transport-button:not(:disabled):hover { background: var(--hover); border-color: var(--hover); }
   .chip:not(:disabled):hover { color: var(--text); background: var(--hover); }
   .filled:not(.disabled):hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .filled.demoted:not(.disabled):hover { background: var(--hover); border-color: var(--accent); }
   .restore:hover { color: var(--text); background: var(--hover); }
 }
 /* a short window (1522 x 692: a 1903 x 865 window at 125 %; 1366 x 657: a 1366 x 768 screen less a browser's chrome):
@@ -450,6 +486,59 @@ body.busy { cursor: progress; }
 .transport-button:not(:disabled):active { background: var(--pressed); }
 .chip:not(:disabled):active { background: var(--pressed); }
 .filled:not(.disabled):active { background: var(--accent-hover); border-color: var(--accent-hover); }
+.filled.demoted:not(.disabled):active { background: var(--pressed); border-color: var(--accent); }
+
+/* the step's blocks in the column (gui/blocks.py): cards of the received card's look between the controls and the foot,
+   BLOCK_SPACING apart; a block of no most takes the room left (.grows), one of a fixed height keeps it, never
+   stretched; its figure is the lab's, shown pixel for pixel; a table longer than its block has a slim bar in the card's
+   right margin */
+/* the desktop's column as dense as the window's (gui/style.py: an option 29 px on its track, a chip 36, a field 30,
+   a slider 22, Restore and View code as tall as their text), so that a step's blocks keep the room the window gives them */
+.bench.desktop .column-segmented .segment, .bench.desktop .picks .segment { min-height: 26px; }
+.bench.desktop .column .chip:not(.slim) { min-height: 36px; }
+.bench.desktop .featured { min-height: 46px; padding-block: 6px; }
+.bench.desktop .number { min-height: 32px; }
+.bench.desktop .column .slider { height: 22px; }                     /* QSlider#LabSlider: 20 px, the thumb's 16 whole */
+.bench.desktop .foot-links .restore, .bench.desktop .foot-links .link { min-height: 30px; padding-block: 3px; }
+.bench.desktop .column-body.blocked { padding-bottom: 0; }    /* a block's card keeps its own air at its foot (BODY_FOOT) */
+.blocks { flex: none; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.blocks.grows { flex: 1 0 auto; }
+.card.block { flex: none; position: relative; display: flex; flex-direction: column; gap: 5px; }
+.card.block.grows { flex: 1 0 auto; }
+.block-heading { margin-bottom: 0; }
+.block-note { color: var(--muted); font-size: var(--fs-small); }
+.block-plot { flex: none; position: relative; overflow: hidden; }
+.card.block.grows .block-plot { flex: 1 1 auto; }
+.block-figure { display: block; position: absolute; left: 0; top: 0; }
+.block-scroll { position: absolute; width: 6px; border-radius: var(--radius-round); background: color-mix(in srgb, var(--track) 70%, transparent);
+                touch-action: none; }
+.block-thumb { position: absolute; left: 0; right: 0; border-radius: var(--radius-round); background: var(--disabled); }
+@media (hover: hover) {
+  .block-scroll:hover .block-thumb { background: var(--muted); }
+}
+
+/* the view's band of a bench of more than two inputs, over the figure (gui/lab_views.ViewBand): one line of 30 px and
+   2 under it, its first mark BAND_SIDE in; the axes' options tight, each icon beside its name; the sliders BAND_SLIDER
+   wide after their text; the chip at the right end; the sliders' line under the axes' only where the band cannot hold
+   both (app.js fitBand) */
+.view-band { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; min-height: 30px; margin-bottom: 2px;
+             padding-left: 14px; }
+.band-line { display: flex; flex-wrap: nowrap; align-items: center; gap: 14px; min-height: 30px; }
+.band-sliders { flex: 1 0 auto; }
+.band-control { display: flex; align-items: center; gap: 6px; }
+.band-control .icon.band-mark { color: var(--muted); }
+.band-segmented .segment { min-height: 26px; padding: 2px 8px; gap: 5px; }
+.band-value { min-width: 0; color: var(--muted); font-family: var(--face); font-size: var(--fs-small); font-weight: 600; }
+.band-control .slider { flex: none; width: 90px; height: 26px; }
+.band-chip { margin-left: auto; min-height: 30px; padding: 2px 12px; }
+.band-chip.reserve { visibility: hidden; }
+.band-short { margin-left: auto; width: 30px; height: 30px; }
+
+/* "Show f" (gui/lab_views.reveal_chip): over the figure, in the box its plan keeps; checked as a chosen option is (the
+   chosen tone and its ring), never the filled accent: the step has one filled command */
+.chip.reveal-chip { position: absolute; z-index: 2; min-height: 0; padding: 0 10px; font-size: var(--fs-small); gap: 5px; }
+.chip.reveal-chip[aria-pressed="true"] { background: var(--chosen); color: var(--text); font-weight: 400;
+                                         box-shadow: inset 0 0 0 1px var(--chosen-ring); }
 
 .stage { flex: 1; min-width: 0; min-height: 0; overflow: auto; background: var(--card);
          padding: 10px 20px 0 20px; display: flex; flex-direction: column; gap: 4px; }
@@ -460,15 +549,14 @@ body.busy { cursor: progress; }
 .alert { position: absolute; top: 6px; right: 10px; max-width: 70%; padding: 4px 12px; border-radius: var(--radius-round); font-size: var(--fs-small);
          color: var(--prose); background: var(--track); }
 .alert.warning { color: var(--warning); background: var(--palette-alert-tint); }
-/* the busy note: on the desktop at the strip's end, beside View code, never over the figure (its room kept, so nothing
-   moves when it shows); on a phone over the figure's box, which has no strip end */
+/* the busy note: on the desktop in the bar, before the sound, never over the figure (its room kept, so nothing moves
+   when it shows); on a phone over the figure's box */
 .busy-note { flex: none; align-self: center; white-space: nowrap; padding: 4px 14px; border-radius: var(--radius-round);
              background: var(--raised); color: var(--prose); font-size: var(--fs-small); opacity: 0; pointer-events: none; box-shadow: var(--depth-card); }
 .figure-box > .busy-note { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); }
 body.busy .busy-note { opacity: 0.95; }
 .strip { flex: none; display: flex; align-items: center; gap: 0; border-top: 1px solid var(--track); padding: 5px 0;
          padding-bottom: max(5px, env(safe-area-inset-bottom)); }
-.bench.desktop .strip { border-top-color: transparent; box-shadow: 0 -1px 0 color-mix(in srgb, var(--text) 4.5%, transparent); }
 .metrics { flex: 1; display: flex; flex-wrap: wrap; row-gap: 6px; }
 .metric { padding: 0 14px; min-width: 0; border-radius: var(--radius-field); }     /* its focus ring's corners */
 .metric:focus-visible { outline-offset: 0; }
@@ -481,7 +569,6 @@ body.busy .busy-note { opacity: 0.95; }
 .kind-warning { color: var(--warning); font-weight: 700; }
 .kind-ok { color: var(--ok); }
 .metric-detail.kind-error, .metric-detail.kind-warning, .metric-detail.kind-ok { font-weight: 600; }
-.strip-end { flex: none; display: flex; align-items: center; gap: 8px; }
 .link { min-height: 40px; padding: 5px 10px; color: var(--accent); background: transparent; border: 1px solid transparent; border-radius: var(--radius-command);
         font-size: var(--fs-body); white-space: nowrap; }
 @media (hover: hover) {
@@ -571,6 +658,7 @@ body.busy .busy-note { opacity: 0.95; }
   .cover.first .journey-stop { animation: sf-enter 300ms cubic-bezier(0.2, 0, 0, 1) backwards; }
   .cover.first .journey-stop:nth-child(2) { animation-delay: 100ms; }
   .cover.first .journey-stop:nth-child(3) { animation-delay: 200ms; }
+  .cover.first .journey-stop:nth-child(4) { animation-delay: 300ms; }
   .dialog[open] { animation: sf-rise 180ms cubic-bezier(0.2, 0, 0, 1); }
   .dialog[open]::backdrop { animation: sf-fade 180ms ease-out; }
   .tip:not([hidden]):not(.instant) { animation: sf-fade 120ms ease-out; }
@@ -620,7 +708,7 @@ body.busy .busy-note { opacity: 0.95; }
   .pill { padding-right: 9px; }
   .connector { width: 12px; }
 }
-/* inside a bench, one row of 44 px targets: Home, the bench's name over its stars, the pills (the current one named,
+/* inside a bench, one row of 44 px targets: Home, the bench's name and its check once passed, the pills (the current one named,
    the others their mark), in landscape the panel switch, "i" and View code (app.js: barTools), sound; no language box */
 .bar.in-bench.phone { gap: 2px; min-height: 0; padding: env(safe-area-inset-top) max(4px, env(safe-area-inset-right)) 0
                       max(4px, env(safe-area-inset-left)); }
@@ -632,7 +720,7 @@ body.busy .busy-note { opacity: 0.95; }
 .bar.in-bench.phone .bench-name { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center;
                                   padding: 0 2px; line-height: 1.2; overflow: hidden; }
 .bar.in-bench.phone .bench-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar.in-bench.phone .bench-name .stars { margin-left: 0; font-size: 11px; }
+.bar.in-bench.phone > .pass-mark { width: 16px; height: 16px; margin: 0 2px; }
 .bar.in-bench.phone .pills { flex: none; gap: 8px; }
 .bar.in-bench.phone .connector { display: none; }
 .bar.in-bench.phone .pill { min-height: 44px; }
@@ -716,8 +804,6 @@ body.busy .busy-note { opacity: 0.95; }
 .bench.dense .slider-line { flex: 1 1 170px; min-width: 0; gap: 8px; }
 .bench.dense .slider-value { min-width: 0; font-size: 14px; }
 .bench.dense .slider { min-width: 90px; height: 44px; touch-action: none; }
-.bench.dense .control-line { flex: 1 0 100%; min-height: 0; }
-.bench.dense .control-line:empty { display: none; }
 .bench.dense .check { min-height: 44px; }
 .bench.dense .check input { width: 22px; height: 22px; }
 .bench.dense .featured { min-height: 48px; padding: 4px 14px; }
@@ -726,6 +812,7 @@ body.busy .busy-note { opacity: 0.95; }
 .bench.dense .transport-button { width: 44px; height: 44px; }
 .bench.dense .chips { flex-direction: row; flex-wrap: wrap; gap: 8px; }
 .bench.dense .chip { flex: 1 1 auto; min-height: 44px; }
+.bench.dense .chip.reveal-chip { position: static; min-height: 44px; padding: 4px 14px; font-size: 14px; }   /* "Show f" docked */
 .sheet { position: absolute; inset: 0; z-index: 6; overflow-y: auto; overscroll-behavior: contain; background: var(--surface);
          padding: 4px max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
          box-shadow: 0 -6px 18px color-mix(in srgb, var(--shade) 35%, transparent); }
@@ -756,6 +843,7 @@ body.busy .busy-note { opacity: 0.95; }
 .foot-line > p { display: inline; margin: 0; }
 .foot-row { display: flex; align-items: center; gap: 8px; }
 .foot-row > .filled { flex: 1; min-width: 0; min-height: 48px; padding: 4px 14px; font-size: 15px; line-height: 1.15; overflow: hidden; }
+.foot-row > .filled.demoted { flex: 1 1 0; min-height: 48px; padding: 4px 8px; font-size: 13px; }   /* "Next bench" beside it */
 .foot-row > .restore { flex: none; min-height: 48px; min-width: 48px; justify-content: center; }
 .foot-row > .restore > span:not(.icon) { display: none; }
 .foot-row > .restore .icon.small { width: 18px; height: 18px; }

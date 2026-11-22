@@ -2,21 +2,27 @@
  * Statistical Fundamentals, the web version: the page. It shows what the laboratory in Python computes (worker.js runs
  * web/bridge.py in Pyodide) and sends it what the reader does; it computes nothing of the study itself.
  *
- *   the cover     the three benches on one thread, the Student | Teacher switch, the bar (share, sound, language);
- *                 in a desktop's window placed by gui/cover.py's numbers (arrangeCover), larger past full HD; the
- *                 title's column in its own order, on purpose: the alpha's mark, title, lead, then the switch (the desktop
- *                 puts the switch first; a visitor of the site reads what it is before choosing a mode)
- *   a bench       the bar (Home, the bench's name and stars, the pills of its steps), the column of the step's
- *                 controls, the figure (drawn by the lab in Python, as RGBA pixels), the strip of measures, View code
+ *   the cover     the four benches on one thread, the Student | Teacher switch, the bar (share, sound, language);
+ *                 in a desktop's window placed by gui/cover.py's numbers (arrangeCover, its page's air tightened where
+ *                 the cards would not hold the first screen: PAGE_TIGHT), larger past full HD; a passed card's check
+ *                 after its name; the title's column in its own order, on purpose: the alpha's mark, title, lead, then
+ *                 the switch (the desktop puts the switch first; a visitor of the site reads what it is before choosing
+ *                 a mode)
+ *   a bench       the bar (Home, the bench's name and its check once passed, the pills of its steps), the column of the
+ *                 step's controls and its blocks, the figure (drawn by the lab in Python, as RGBA pixels), View code
  *
  * The requests go one at a time to the worker, in order; a request that only refreshes (the pointer moving, the page
  * resized) replaces the one of its kind still waiting: the latest wins, so dragging on a phone stays usable. Each
  * answer is the whole view, which the page draws: the column is built once per step and language and then updated in
  * place (a slider being dragged, a field being typed in are never rebuilt under the hand).
  *
- * Three arrangements: the desktop's workbench (the column at the left, the figure on all the room left, the strip at
- * its foot: the figure asked at the stage's whole size, its box reserved before it comes, shown one pixel drawn to one
- * pixel of the screen and moved onto the screen's pixel grid); and a phone, one screen that never scrolls as a page, in portrait (phoneBench: the bar on one row, the
+ * Three arrangements: the desktop's workbench, columned as the window (gui/lab_views.LabView: the column at the left, its
+ * title, the card's slot sized per bench, the rule, the controls, the step's BLOCKS between the controls and the foot
+ * (each a small figure the lab draws, shown pixel for pixel), the foot with the status line, the filled command and
+ * Restore beside View code; the figure on all the room left, with no strip, the view's band of a bench of more than two
+ * inputs over it and "Show f" on it: the figure asked at the stage's whole size, its box reserved before it comes, shown
+ * one pixel drawn to one pixel of the screen and moved onto the screen's pixel grid; the busy note in the bar, never over
+ * the figure); and a phone, one screen that never scrolls as a page, in portrait (phoneBench: the bar on one row, the
  * panel switch with the card's "i" and View code, the figure, the measures on one line, the dock, the foot) or in
  * landscape and any short or narrow window (landscapeBench: the column at the left, the switch in the bar, the figure
  * fitted to the stage's height with the measures at its side or under it). On a phone the figure is one panel at a time
@@ -25,16 +31,18 @@
  * Restore) and its line says something over the dock's edge only when there is something to say. On a touch screen a
  * long press shows the tooltip of what is pressed (never a slider's or a field's; the figure has none), a tap that of a
  * measure or of the foot's line.
- * Every text comes from the catalogs (texts.json); what is kept between visits (the language, the mode, the student's
- * stars, the sound) is in localStorage.
+ * No grey line stands anywhere: why the filled command cannot be pressed is its tooltip, what a verdict lacks the status
+ * line's. Every text comes from the catalogs (texts.json); what is kept between visits (the language, the mode, the
+ * benches a student passed, the sound) is in localStorage.
  */
 "use strict";
 (() => {
   const BUILD = document.body.dataset.build;
   const STORE = "statistical-fundamentals";
   const SOUNDS = {                       // gui/sounds.SOUNDS: cue -> [its length in seconds, its priority]
-    navigate: [0.14, 1], advance: [0.26, 2], apply: [0.08, 1], complete: [0.36, 2],
-    better: [0.38, 3], worse: [0.30, 3], discard: [0.16, 2], achieved: [0.46, 3],
+    navigate: [0.14, 1], advance: [0.26, 2], apply: [0.08, 1], place: [0.07, 1], remove: [0.08, 1], sample: [0.20, 1],
+    complete: [0.36, 2], discard: [0.16, 2], reveal: [0.30, 2], unlock: [0.40, 2],
+    passed: [0.38, 3], missed: [0.34, 3], achieved: [0.50, 3],
   };
   const THROTTLE = 0.25;                 // seconds: gui/sounds.THROTTLE
   const TYPING_MS = 350;                 // gui/widgets.NumberField.TYPING_MS: a pause in the typing commits a number in range
@@ -69,6 +77,39 @@
                                          // while the dock keeps DOCK_FLOOR (portrait) or the figure still fits (landscape)
   const SETTLE_MS = 220;                 // a phone's screen resized: the figure is asked for once it settles
   const LONG_PRESS = 500;                // milliseconds a touch rests before the tooltip of what it presses shows
+  const COVER_TIGHT = 12;                // gui/cover.PAGE_TIGHT: the page's air above and below where the cards would not hold
+  const SMALL_DOT = 1.5 * 3.0 / 4.4;     // gui/cover's SMALL_DOT of DOT: a design of many in a small picture (Mark.small)
+  const BAND_BELOW = 2;                  // gui/lab_views.BAND_BELOW: from the view's band to the figure
+  const BAND_MARKS = { across: "axis_across", up: "axis_up" };     // gui/lab_views.BAND_MARKS: the mark before an axis's options
+  const BAND_CHIP = "recenter";          // gui/lab_views.BAND_CHIP: the chip that puts the slice back
+  const REVEAL_MARK = "eye";             // gui/lab_views.REVEAL_MARK: "Show f"
+  const CARD_MARGIN = 12;                // gui/blocks.CARD_MARGINS' left and right: a block's scroll bar stands in the right one
+  const SCROLL_WIDTH = 6;                // gui/blocks.SCROLL_WIDTH: the slim scroll bar of a table longer than its block
+  const WHEEL_ROW = 33;                  // pixels of the wheel for one row of a block's table (a notch of 100: three rows, as Qt's)
+
+  // ---------------------------------------------------------------- the contract with the bridge
+  // The names the page reads from the view and the meta, and the operations it sends, in ONE place (the contract:
+  // web/bridge.py's): a name changed over there is changed here alone.
+  const WIRE = {
+    statusTip: (lab) => lab.status_tip || "",                       // the verdict's reason (Lab.hint), the status line's tooltip
+    next: (lab) => lab.next || null,                                // {label, tip}: "Next bench →" or "Back to the cover"
+    demoted: (lab) => !!(lab.filled && lab.filled.demoted),        // outlined over "Next bench"
+    reveal: (lab) => lab.reveal || null,                            // {offered, checked, label, tip, mark, box: [x, top, w, h] | null}
+    blocks: (lab) => lab.blocks || [],                              // [{key, title, note, tip, least, most, live, rows, scroll}]
+    slot: (bench) => bench.slot || null,                            // {rows, problem}: the card's slot, the bench's
+    onLine: (control) => control.on_line || [],                     // the slim commands on a control's label line
+    placed: (action) => action.placed || "",                        // the control whose line holds this chip's copy
+    tracking: (control) => control.tracking !== false,              // a slider read at every step (false: on release)
+    texts: (control) => control.texts || null,                      // a slider's text at each position (followed in a drag)
+    band: (item) => !!item.band,                                    // a control or a chip of the view's band
+    blockMeta: (meta) => (meta && meta.blocks) || {},               // {key: {width, height, ratio, same, pixel_width?, pixel_height?}}
+    blockPixels: (message) => message.blockPixels || {},            // {key: ArrayBuffer}: the worker's extra transferables
+    cursor: (lab) => (lab && lab.cursor) || "",                     // the pointer's shape (ew-resize on the band), the view's
+    passed: (item) => !!item.passed,                                // a bench's and a cover card's
+    passedText: (item) => item.passed_text || "",
+    sizeBlocks: "blocks",                                           // the request's size.blocks = {key: [width, height]}
+    op: { onward: "onward", reveal: "reveal", blockPointer: "block_pointer", blockPress: "block_press", blockScroll: "block_scroll" },
+  };
   const QR_LIBRARY = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
   const QR_INTEGRITY = "sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==";
   const STAGES = ["python", "numpy", "matplotlib", "app", "cover"];
@@ -93,9 +134,10 @@
   }
 
   // ---------------------------------------------------------------- what is kept between visits
-  function load() {
+  function load() {                                                // only a plain object: anything else kept reads as nothing
     try {
-      return JSON.parse(localStorage.getItem(STORE) || "{}") || {};
+      const kept = JSON.parse(localStorage.getItem(STORE) || "{}");
+      return kept && typeof kept === "object" && !Array.isArray(kept) ? kept : {};
     } catch (error) {
       return {};
     }
@@ -116,7 +158,8 @@
       if (value === undefined || value === null || value === false) continue;
       if (key === "class") node.className = value;
       else if (key === "text") node.textContent = value;
-      else if (key === "html") node.innerHTML = value;
+      else if (key === "html") node.innerHTML = value;              // rich text of the bridge's own (catalogs, labs): <sup>
+      else if (key === "style") node.style.cssText = value;         // through the CSSOM: the CSP allows no style attribute
       else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
       else if (key === "dataset") Object.assign(node.dataset, value);
       else node.setAttribute(key, value === true ? "" : value);
@@ -238,7 +281,7 @@
   function pump() {
     if (flight || !ready || !pending.length) return;
     const item = pending.shift();
-    const request = Object.assign({ op: item.op }, item.args, { size: figureSize(), force: page.needImage });
+    const request = Object.assign({ op: item.op }, item.args, { size: figureSize(), force: page.needImage || page.needBlocks });
     flight = { id: nextId++, item, size: request.size, at: performance.now() };
     clearTimeout(busyTimer);
     busyTimer = setTimeout(() => document.body.classList.add("busy"), BUSY_AFTER);
@@ -257,7 +300,7 @@
     }
     if (message.text) {
       try {
-        apply(JSON.parse(message.text), JSON.parse(message.meta || "{}"), message.pixels, done);
+        apply(JSON.parse(message.text), JSON.parse(message.meta || "{}"), message.pixels, done, WIRE.blockPixels(message));
       } catch (error) {
         showError(String(error && error.stack ? error.stack : error));
       }
@@ -335,7 +378,7 @@
   // ---------------------------------------------------------------- the arrangement
   const page = {
     view: null, screen: null, layout: null, signature: null, panel: "plane", meta: null, barSignature: null,
-    nodes: {}, codeFunction: 0, codeShown: null, codeReadingKey: null, codeData: null, needImage: true,
+    nodes: {}, codeFunction: 0, codeShown: null, codeReadingKey: null, codeData: null, needImage: true, needBlocks: false,
     coverShown: false, entered: null, snapped: false,
   };
 
@@ -351,6 +394,9 @@
       node.removeEventListener("animationend", ended);
       const canvas = page.nodes.canvas;
       if (canvas && node.contains(canvas)) snap(canvas, page.snapped);
+      for (const card of Object.values(page.nodes.blockCards || {})) {    // the blocks' figures, put on the grid again too
+        if (node.contains(card.canvas) && card.canvas.width) align(card.canvas, true);
+      }
     });
   }
 
@@ -385,23 +431,44 @@
     if (page.screen !== "bench" || !nodes.stage || !nodes.stage.isConnected || page.layout !== now) {
       return estimateSize(ratio);
     }
-    return Object.assign(stageRoom(), { ratio });
+    const room = Object.assign(stageRoom(), { ratio });
+    const blocks = blockRoom();
+    if (blocks) room[WIRE.sizeBlocks] = blocks;
+    return room;
   }
 
-  // The desktop's figure takes all the stage's room: its width inside the padding, its height down to the strip (no cap,
-  // no aspect kept: the labs' own plan, explorers/panels.arrangement, composes the panels in whatever room it is given).
+  // The desktop's figure takes all the stage's room: its width inside the padding, its height from under the view's band
+  // (a bench of more than two inputs) down to the stage's foot: no strip (the step's measures are its blocks'), no cap,
+  // no aspect kept (the labs' own plan, explorers/panels.arrangement, composes the panels in whatever room it is given).
   function stageRoom() {
     const nodes = page.nodes;
     const style = getComputedStyle(nodes.stage);
     const width = nodes.stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    const height = nodes.stage.clientHeight - parseFloat(style.paddingTop) - nodes.strip.offsetHeight - STAGE_GAP;
+    const band = nodes.band && !nodes.band.hidden                   // its line, BAND_BELOW under it and the stage's gap
+      ? nodes.band.offsetHeight + (parseFloat(getComputedStyle(nodes.band).marginBottom) || 0) + STAGE_GAP : 0;
+    const height = nodes.stage.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom) - band;
     return { width: Math.max(width, 120), height: Math.max(height, 200) };
   }
 
   function estimateSize(ratio) {
-    const bar = 49, strip = 56;                                     // the bar and the strip of two lines, as they come
+    const bar = 49;                                                 // the bar, as it comes; a band's line where the lab has one
+    const lab = page.view && page.view.bench && page.view.bench.lab;
+    const band = lab && lab.controls.some(WIRE.band) ? 30 + BAND_BELOW + STAGE_GAP : 0;
     const code = page.view && page.view.bench && page.view.bench.code.open && codeBeside("desktop") ? codeWidth() : 0;
-    return { width: Math.max(window.innerWidth - COLUMN - code - 40, 120), height: Math.max(window.innerHeight - bar - STAGE_INSETS[1] - strip, 200), ratio };
+    return { width: Math.max(window.innerWidth - COLUMN - code - 40, 120), height: Math.max(window.innerHeight - bar - STAGE_INSETS[1] - band, 200), ratio };
+  }
+
+  // The room of each block's figure on show, in CSS pixels as laid out (gui/blocks.BlockCard: the column's content less
+  // the card's margins wide, least to most high); null where there is none.
+  function blockRoom() {
+    const cards = page.nodes.blockCards;
+    if (!cards) return null;
+    const room = {};
+    for (const [key, card] of Object.entries(cards)) {
+      if (card.node.hidden || card.holder.hidden) continue;
+      room[key] = [Math.round(card.holder.clientWidth), Math.round(card.holder.clientHeight)];
+    }
+    return Object.keys(room).length ? room : null;
   }
 
   function landscapeColumn() {                                       // style.css: .bench.compact's --column
@@ -454,7 +521,7 @@
   }
 
   // ---------------------------------------------------------------- an answer drawn
-  function apply(view, meta, pixels, done) {
+  function apply(view, meta, pixels, done, blockPixels) {
     if (view.error) showError(view.error);
     page.view = view;
     if (view.persist) save(view.persist);
@@ -467,7 +534,7 @@
     for (const cue of view.cues || []) sound.play(cue);
     drawBar(view);
     if (view.screen === "cover") drawCover(view);
-    else drawBench(view, meta, pixels, done);
+    else drawBench(view, meta, pixels, done, blockPixels || {});
     const loading = document.getElementById("loading");
     if (!loading.hidden) {
       loading.hidden = true;
@@ -512,8 +579,8 @@
   function drawBar(view) {
     const bar = document.getElementById("bar");
     const phone = view.screen !== "cover" && arrangementOf() !== "desktop";
-    const bench = view.bench && { name: view.bench.name, stars: view.bench.stars, text: view.bench.stars_text, pills: view.bench.pills };
-    const signature = JSON.stringify([view.screen, view.language, view.languages, view.bar, view.most, bench, sound.enabled, phone]);
+    const bench = view.bench && { name: view.bench.name, passed: WIRE.passed(view.bench), text: WIRE.passedText(view.bench), pills: view.bench.pills };
+    const signature = JSON.stringify([view.screen, view.language, view.languages, view.bar, bench, sound.enabled, phone]);
     if (signature === page.barSignature && bar.childElementCount) return;
     page.barSignature = signature;
     const focused = document.activeElement;                          // an option of the language chosen by the arrows: the
@@ -535,8 +602,8 @@
       setTip(home, view.bar.home_tip);
       bar.append(home);
       const name = el("span", { class: "bar-name bench-name", "aria-label": bench.name }, el("span", { class: "bench-title" }, bench.name));
-      if (bench.stars) name.append(stars(bench.stars, view.most, bench.stars_text));
       bar.append(name);
+      if (WIRE.passed(bench)) bar.append(passMark(WIRE.passedText(bench)));   // step_bar.PassMark: beside the bench's name
       bar.append(el("div", { class: "bar-spring" }));
       const pills = el("nav", { class: "pills", "aria-label": view.bar.steps });
       bench.pills.forEach((pill, index) => {
@@ -558,31 +625,12 @@
     if (inLanguage) refocus(bar.querySelector(".language"));
   }
 
-  // The stars as icons (the filled star, the outline of a hollow one), the letters kept as the text a screen reader
-  // hears; with a label (the bar's, a cover card's), the run is one image named by it.
-  const FULL_STAR = "★", HOLLOW_STAR = "☆";
-
-  function starRun(run, label) {
-    const node = el("span", { class: "stars", role: label ? "img" : null, "aria-label": label || null },
-                    el("span", { class: "visually-hidden" }, run));
-    for (const letter of run) node.append(icon(letter === FULL_STAR ? "star" : "star_outline", letter === FULL_STAR ? "full" : "hollow"));
-    return node;
-  }
-
-  function stars(count, most, label) {
-    return starRun(FULL_STAR.repeat(count) + HOLLOW_STAR.repeat(Math.max(most - count, 0)), label);
-  }
-
-  // A run of the star letters arriving in a text the bridge wrote (a status line, a measure's value) drawn as icons.
-  function starify(node) {
-    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
-    const found = [];
-    while (walker.nextNode()) if (/[★☆]/.test(walker.currentNode.nodeValue)) found.push(walker.currentNode);
-    for (const textNode of found) {
-      const parts = textNode.nodeValue.split(/([★☆]+)/);
-      textNode.replaceWith(...parts.filter(Boolean).map((part) => (/^[★☆]+$/.test(part) ? starRun(part) : document.createTextNode(part))));
-    }
-    return node;
+  // The check of a bench passed (gui/step_bar.PassMark, paint_badge): the check of a step done in its green disc, an
+  // image named and explained by "Bench complete" (no focus: not a command).
+  function passMark(said) {
+    const mark = el("span", { class: "pass-mark", role: "img", "aria-label": said }, icon("check"));
+    setTip(mark, said);
+    return mark;
   }
 
   // ---------------------------------------------------------------- the cover
@@ -604,6 +652,7 @@
                                      onclick: () => { if (mode.key !== page.view.mode) ask("mode", { mode: mode.key }); } }, mode.name));
     }
     rove(switcher);
+    setTip(switcher, cover.mode_line);                               // what the mode means: its tooltip, no grey line (D5)
     const restart = el("button", { class: "quiet-button restart", type: "button", onclick: confirmRestart,
                                    style: cover.restart ? null : "visibility:hidden" }, cover.restart_texts.command);
     setTip(restart, cover.restart_texts.tip);
@@ -611,7 +660,7 @@
     const edition = el("p", { class: "edition" }, el("span", { class: "edition-name" }, cover.edition), " ",
                        el("span", { class: "edition-version" }, cover.version || document.body.dataset.version));
     const lede = el("section", { class: "lede" }, edition, el("h1", { class: "cover-title" }, cover.title),
-                    el("p", { class: "lead" }, cover.lead), switcher, el("p", { class: "mode-line" }, cover.mode_line), restart);
+                    el("p", { class: "lead" }, cover.lead), switcher, restart);
     const journey = el("ol", { class: "journey" });
     cover.cards.forEach((card) => journey.append(coverCard(card)));
     const body = el("div", { class: "cover" }, el("div", { class: "cover-inner" }, lede, journey));
@@ -648,22 +697,33 @@
   // a larger picture and larger texts; the cards in the middle of the screen, the title a little above theirs. On a phone
   // (or a short or narrow window) the cover keeps style.css's own arrangement.
   let coverObserver = null, coverFrame = 0, coverFonts = false;
-  function arrangeCover() {
+  function arrangeCover(tighten) {
     const nodes = page.nodes, cover = nodes.cover;
     if (!cover || !cover.isConnected || !cover.clientWidth) return;   // not on screen yet: its observer calls again
     const props = ["--lede", "--path", "--row", "--picture", "--type", "--lede-top"];
     const inner = cover.firstElementChild;
     if (arrangementOf() !== "desktop") {
-      cover.classList.remove("arranged");
+      cover.classList.remove("arranged", "tight");
       for (const prop of props) cover.style.removeProperty(prop);
       inner.style.zoom = "";
+      calmTracks(nodes.journey);
       return;
     }
-    const style = getComputedStyle(cover);
+    cover.classList.add("arranged");                                 // its page's air (style.css), tightened below if need be
+    cover.classList.remove("tight");
+    let style = getComputedStyle(cover);
     const outerWidth = cover.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    const outerHeight = cover.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+    let outerHeight = cover.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
     const scale = Math.min(Math.max(Math.min(window.innerWidth / COVER.screen[0], window.innerHeight / COVER.screen[1]), 1), COVER.scaleMost);
     inner.style.zoom = scale > 1 ? scale.toFixed(4) : "";           // a screen larger than a full-HD one: the whole composition larger
+    const count = nodes.journey.children.length || 1;
+    // where even the cards at their usual row (or as their texts lay out: tighten) would not hold the first screen (four
+    // cards at 1280 x 720), the page's air above and below gives way first (gui/cover.PAGE_TIGHT), before the page scrolls
+    if ((tighten === true || count * COVER.rowUsual + (count - 1) * COVER.cardGap > outerHeight / scale) && parseFloat(style.paddingTop) > COVER_TIGHT) {
+      cover.classList.add("tight");
+      style = getComputedStyle(cover);
+      outerHeight = cover.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+    }
     const available = outerWidth / scale, screen = outerHeight / scale;
     const width = Math.min(available, COVER.column);
     const lede = Math.min(Math.max(COVER.ledeShare * width, COVER.ledeLeast), COVER.ledeMost);
@@ -673,26 +733,45 @@
     const tall = (height) => Math.max(usual, Math.min(height - 2 * COVER.pad, COVER.pictureTall * card,
                                                       card - 3 * COVER.pad - COVER.arrow - COVER.textLeast));
     const tallest = Math.min(2 * COVER.pad + tall(COVER.rowMost), COVER.rowMost);
-    const count = nodes.journey.children.length || 1;
     const row = Math.floor(Math.max(Math.min((screen - (count - 1) * COVER.cardGap) / count, tallest), COVER.rowUsual));
     const larger = 1 + (COVER.typeMost - 1) * Math.min(Math.max((row - COVER.rowUsual) / (COVER.rowMost - COVER.rowUsual), 0), 1);
-    cover.classList.add("arranged");
     cover.style.setProperty("--lede", Math.round(lede) + "px");
     cover.style.setProperty("--path", Math.round(path) + "px");
     cover.style.setProperty("--row", row + "px");
     cover.style.setProperty("--picture", Math.round(Math.min(tall(row), row - 2 * COVER.padY)) + "px");
     cover.style.setProperty("--type", larger.toFixed(3));
+    calmTracks(nodes.journey);                                      // at the track's size now set
     const shown = (node) => node.getBoundingClientRect().height / scale;      // layout pixels inside the zoom
     const block = shown(nodes.lede) - (parseFloat(getComputedStyle(nodes.lede).paddingTop) || 0);
     const cards = shown(nodes.journey);                             // as tall as the cards' texts need, at least `row` each
     const beside = Math.max(screen - cards, 0) / 2 + 0.4 * (cards - block);
     cover.style.setProperty("--lede-top", Math.round(Math.min(Math.max(beside, 0), Math.max(screen - block, 0))) + "px");
+    if (tighten !== true && !cover.classList.contains("tight") && cards > screen + 1) arrangeCover(true);   // texts taller than a row
+  }
+
+  // What each step is worth, under the track's names on one line each (gui/cover.BenchTile.shown_worth): every text
+  // said, centred under its stop, or none at all on a card (.calm: a narrow card stays calm) where two neighbours would
+  // come closer than WORTH_GAP or the first or the last would leave the card's texts. Never wrapped, so a card keeps its
+  // height and four cards hold the first screen after their passes too.
+  const WORTH_GAP = 8;
+  function calmTracks(journey) {
+    for (const track of journey ? journey.querySelectorAll(".track") : []) {
+      track.classList.remove("calm");
+      const stops = [...track.querySelectorAll(".stop")];
+      if (!stops.length || !track.offsetParent) continue;
+      const step = stops[0].getBoundingClientRect().width;
+      const room = track.parentNode.getBoundingClientRect().width;
+      const widths = stops.map((stop) => { const worth = stop.querySelector(".track-worth"); return worth ? worth.getBoundingClientRect().width : 0; });
+      const crowded = widths.some((a, k) => k && a && widths[k - 1] && (a + widths[k - 1]) / 2 + WORTH_GAP > step);
+      const out = widths.some((w, k) => w && (step * (k + 0.5) - w / 2 < 0 || step * (k + 0.5) + w / 2 > room));
+      track.classList.toggle("calm", crowded || out);
+    }
   }
 
   function coverCard(card) {
     const picture = coverPicture(card.picture);
     const name = el("div", { class: "card-name" }, el("span", {}, card.title));
-    if (card.stars) name.append(stars(card.stars, 3, card.stars_text));
+    if (WIRE.passed(card)) name.append(passMark(WIRE.passedText(card)));     // gui/cover's badge, after the name
     const track = el("ol", { class: "track" });
     card.track.forEach((stop, index) => {
       if (index) track.append(el("li", { class: "track-line " + (card.track[index - 1].state === "done" ? "lit" : ""), "aria-hidden": "true" }));
@@ -715,15 +794,20 @@
     const [x0, x1, y0, y1] = picture.window;
     const ns = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(ns, "svg");
-    svg.setAttribute("viewBox", `0 0 100 100`);
+    // a picture of equal scales (cover.Picture.equal: bench 4's objective space) keeps its window's shape, in the middle
+    // of the well (gui/cover.picture_box); any other fills the well
+    const tall = picture.equal ? 100 * (y1 - y0) / (x1 - x0) : 100;
+    svg.setAttribute("viewBox", `0 0 100 ${tall.toFixed(3)}`);
+    svg.setAttribute("preserveAspectRatio", picture.equal ? "xMidYMid meet" : "none");
     svg.setAttribute("class", "picture");
     svg.setAttribute("aria-hidden", "true");
-    const sx = (x) => ((x - x0) / (x1 - x0)) * 100, sy = (y) => 100 - ((y - y0) / (y1 - y0)) * 100;
+    const sx = (x) => ((x - x0) / (x1 - x0)) * 100, sy = (y) => tall - ((y - y0) / (y1 - y0)) * tall;
     for (const mark of picture.marks) {
       if (mark.kind === "dots") {
         for (const [x, y] of mark.points) {
           const dot = document.createElementNS(ns, "circle");
-          dot.setAttribute("cx", sx(x).toFixed(2)); dot.setAttribute("cy", sy(y).toFixed(2)); dot.setAttribute("r", "1.5");
+          dot.setAttribute("cx", sx(x).toFixed(2)); dot.setAttribute("cy", sy(y).toFixed(2));
+          dot.setAttribute("r", mark.small ? SMALL_DOT.toFixed(2) : "1.5");     // one of many (cover.Mark.small): smaller
           dot.setAttribute(mark.hollow ? "stroke" : "fill", mark.color);
           if (mark.hollow) { dot.setAttribute("fill", "none"); dot.setAttribute("stroke-width", "0.6"); }
           svg.append(dot);
@@ -783,7 +867,7 @@
     copy.onclick = () => {
       if (navigator.clipboard) navigator.clipboard.writeText(address).then(() => { copy.textContent = text("web.qr.copied"); }, () => {});
     };
-    const full = el("a", { class: "quiet-button", href: "qr.html", target: "_blank", rel: "noopener" }, text("web.qr.full"));
+    const full = el("a", { class: "quiet-button", href: "qr.html", target: "_blank", rel: "noopener noreferrer" }, text("web.qr.full"));
     const close = el("button", { class: "primary-small", type: "button", onclick: () => dialog.close() }, text("web.qr.close"));
     dialog.replaceChildren(el("h2", {}, text("web.qr.title")), el("p", {}, text("web.qr.lead")), code,
                            el("p", { class: "address" }, address), el("div", { class: "dialog-row" }, copy, full, close));
@@ -796,7 +880,7 @@
   }
 
   // ---------------------------------------------------------------- a bench
-  function drawBench(view, meta, pixels, done) {
+  function drawBench(view, meta, pixels, done, blockPixels) {
     const bench = view.bench;
     const layout = arrangementOf();
     const signature = [bench.key, bench.step_key, view.language, view.mode, layout,
@@ -822,10 +906,20 @@
     const bar = document.getElementById("bar");                     // a phone in landscape: the switch, "i" and View code in the bar
     for (const old of bar.querySelectorAll(".bar-tools")) if (old !== page.nodes.barTools) old.remove();   // turned: no longer
     if (page.nodes.barTools && page.nodes.barTools.parentNode !== bar) bar.insertBefore(page.nodes.barTools, bar.querySelector(".sound"));
+    for (const old of bar.querySelectorAll(".busy-note")) if (old !== page.nodes.busy) old.remove();
+    if (page.layout === "desktop" && page.nodes.busy.parentNode !== bar) bar.insertBefore(page.nodes.busy, bar.querySelector(".sound"));
     if (meta && meta.width) {
       if (done && done.size) page.asked = done.size;
       drawFigure(meta, pixels);
     }
+    if (meta && meta.blocks) {
+      if (done && done.size) page.blocksAsked = done.size[WIRE.sizeBlocks] || null;
+      drawBlocks(WIRE.blockMeta(meta), blockPixels);
+    }
+    if (page.nodes.blockCards) {                                    // a block on show with no picture yet: the next asks for all
+      page.needBlocks = Object.values(page.nodes.blockCards).some((card) => !card.node.hidden && !card.holder.hidden && !card.canvas.width);
+    }
+    placeReveal(bench.lab);
     drawCode(bench.code);
     scheduleFrame(bench.lab.playing);
     if ((built && !pixels) || stale()) {
@@ -838,11 +932,25 @@
     if (!meta || !meta.width || !asked) return true;
     const now = figureSize();
     if (now.ratio !== asked.ratio || (now.panel || null) !== (asked.panel || null)) return true;
+    if (blocksMoved(now[WIRE.sizeBlocks])) return true;
     if (now.fit) return now.width !== asked.width || now.fit !== asked.fit || !now.aside !== !asked.aside;   // a phone: the bridge fits
     if (Math.abs(now.width - meta.width) > 1) return true;
     if (now.height === null) return false;
     if (meta.height > (asked.height || 0) + 1) return now.height > meta.height + 1;     // held at the lab's least height
     return Math.abs(now.height - meta.height) > 1;
+  }
+
+  // The blocks' room changed since the last answer asked for it (a block shown or hidden, the column taller): the size a
+  // request last sent is the reference, never what the bridge answered, so that a room it cannot fill asks only once.
+  function blocksMoved(now) {
+    const asked = page.blocksAsked || null;
+    if (!now || !asked) return !!now && !asked && !!page.nodes.blockCards && page.meta && "blocks" in page.meta;
+    const keys = new Set([...Object.keys(now), ...Object.keys(asked)]);
+    for (const key of keys) {
+      const a = now[key], b = asked[key];
+      if (!a || !b || Math.abs(a[0] - b[0]) > 1 || Math.abs(a[1] - b[1]) > 1) return true;
+    }
+    return false;
   }
 
   function scheduleFrame(playing) {
@@ -853,16 +961,21 @@
   function buildBench(view) {
     const lab = view.bench.lab;
     const nodes = page.nodes = { controls: {}, commands: {} };
+    const desktop = page.layout === "desktop";
     page.needImage = true;
     page.codeShown = null;
+    page.blocksAsked = null;
     const title = el("h2", { class: "lab-title" }, lab.title);
     setTip(title, lab.purpose);
     nodes.cardHeading = el("div", { class: "card-heading" });
     nodes.cardRows = el("div", { class: "card-rows" });
     nodes.card = el("div", { class: "card" }, nodes.cardHeading, nodes.cardRows);
     const body = el("div", { class: "column-body" });
+    // the view's band of a bench of more than two inputs stands over the figure on the desktop (ViewBand), its controls
+    // and its chip out of the column; on a phone they stay in the dock, where they fit
+    const banded = (item) => desktop && WIRE.band(item);
     for (const action of lab.featured) body.append(featuredButton(action));
-    for (const control of lab.controls) body.append(controlGroup(control));
+    for (const control of lab.controls) if (!banded(control)) body.append(controlGroup(control));
     if (lab.transport.length) {
       const icons = el("div", { class: "transport-icons" });
       for (const action of lab.transport) {
@@ -875,10 +988,15 @@
       body.append(nodes.transport);
     }
     const chips = el("div", { class: "chips" });
-    for (const action of lab.chips) chips.append(chipButton(action));
+    for (const action of lab.chips) if (!banded(action)) chips.append(chipButton(action));
     body.append(chips);
-    nodes.status = el("p", { class: "status", role: "status" });
-    nodes.missing = el("p", { class: "missing" });
+    nodes.band = desktop ? viewBand(lab) : null;
+    if (desktop) {                                                  // the step's blocks: after the chips, over the room left
+      nodes.blocks = el("div", { class: "blocks", hidden: true });
+      nodes.blockCards = {};
+      body.append(nodes.blocks);
+    }
+    nodes.status = el("p", { class: "status", role: "status" });   // the verdict; what it lacks, its tooltip (no grey line)
     nodes.filled = null;
     if (lab.filled) {
       nodes.filled = el("button", { class: "filled", type: "button", onclick: () => {
@@ -888,6 +1006,9 @@
         else showTipOf(nodes.filled);
       } });
     }
+    // the bench passed: "Next bench →" (or "Back to the cover") is the foot's filled command, the lab's own over it
+    // outlined (gui/lab_views.LabView.set_next, fit_filled)
+    nodes.next = el("button", { class: "filled next", type: "button", hidden: true, onclick: () => ask(WIRE.op.onward) });
     nodes.restore = el("button", { class: "restore", type: "button", onclick: () => ask("restore") }, icon("reset", "small"), el("span", {}, lab.restore.label));
     setTip(nodes.restore, lab.restore.tip);
     if (!lab.restore.shown) nodes.restore.hidden = true;
@@ -898,8 +1019,18 @@
     nodes.keys = el("p", { class: "visually-hidden", id: "figure-keys" });
     nodes.canvas = el("canvas", { class: "figure", tabindex: "0", role: "img" });
     nodes.alert = el("div", { class: "alert", hidden: true });
-    nodes.busy = el("div", { class: "busy-note", "aria-hidden": "true" }, text("web.busy"));   // the desktop's: at the strip's end
-    nodes.figureBox = el("div", { class: "figure-box" }, nodes.canvas, nodes.keys, nodes.alert, nodes.busy);
+    // "Show f" (gui/lab_views.reveal_chip): a checkable chip, its eye before its name, in the box the figure's plan keeps
+    // for it at the right end of the 3D card's head (Plan.reveal); a view, never the study
+    nodes.revealLabel = el("span", { class: "chip-label" });
+    nodes.reveal = el("button", { class: "chip reveal-chip", type: "button", "aria-pressed": "false", hidden: true, onclick: () => {
+      const reveal = WIRE.reveal(page.view.bench.lab);
+      if (reveal) ask(WIRE.op.reveal, { on: !reveal.checked });
+    } }, icon((WIRE.reveal(lab) && WIRE.reveal(lab).mark) || REVEAL_MARK, "mark"), nodes.revealLabel);
+    if (!desktop) chips.append(nodes.reveal);                       // a phone's plan keeps no box for it: among the chips
+    // the busy note: on the desktop in the bar (drawBench puts it there), never over the figure; on a phone over its box
+    nodes.busy = el("div", { class: "busy-note", "aria-hidden": "true" }, text("web.busy"));
+    nodes.figureBox = el("div", { class: "figure-box" }, desktop ? nodes.reveal : null, nodes.canvas, nodes.keys, nodes.alert);   // Show f: before the figure for the keyboard
+    if (!desktop) nodes.figureBox.append(nodes.busy);
     nodes.figureBox.addEventListener("scroll", () => fold(nodes.figureBox, false), { passive: true });
     nodes.metrics = el("div", { class: "metrics" });
     nodes.table = el("div", { class: "lab-table", hidden: true });
@@ -909,7 +1040,8 @@
     document.getElementById("screen").replaceChildren(benchNode);
     nodes.bench = benchNode;
     wireFigure(nodes.canvas);
-    if (page.layout !== "desktop") {
+    if (observer) observer.disconnect();                            // the nodes of the bench built before are gone
+    if (!desktop) {
       const size = figureSize();                                    // the box before the figure comes: the one known, or the room
       const known = page.meta && page.meta.box && page.asked && page.asked.fit === size.fit && page.asked.width === size.width
                     && !page.asked.aside === !size.aside;
@@ -922,38 +1054,49 @@
       observe(nodes.bench);
     } else {
       observe(nodes.stage);
-      observe(nodes.strip);
       observe(nodes.body);
+      observe(nodes.blocks);
+      if (nodes.band) observe(nodes.band);
+      sizeSlot(view.bench);
+      if (document.fonts && document.fonts.ready) {                 // measured again in the faces that came (the serif)
+        const built = nodes;
+        document.fonts.ready.then(() => { if (page.nodes === built && page.view && page.view.bench) sizeSlot(page.view.bench); });
+      }
     }
   }
 
-  // The desktop's workbench: the column (title, card, controls, foot) beside the stage (the panel switch, the figure, the
-  // strip with View code at its end).
+  // The desktop's workbench (gui/lab_views.LabView.build_column): the column (title, the card's slot, the rule; the
+  // controls and the step's blocks, which scroll; the foot: the status line, the filled command, "Next bench" once the
+  // bench is passed, Restore with View code at its right) beside the stage (the view's band, the figure; no strip: the
+  // step's measures are its blocks').
   function workbench(lab, title, body) {
     const nodes = page.nodes;
-    const head = el("div", { class: "column-head" }, title, el("div", { class: "card-slot" }, nodes.card), el("div", { class: "rule" }));
-    const foot = el("div", { class: "column-foot" }, nodes.status, nodes.missing);
+    nodes.slot = el("div", { class: "card-slot" }, nodes.card);
+    const head = el("div", { class: "column-head" }, title, nodes.slot, el("div", { class: "rule" }));
+    const foot = el("div", { class: "column-foot" }, nodes.status);
     if (nodes.filled) foot.append(nodes.filled);
-    foot.append(nodes.restore);
-    const column = el("aside", { class: "column" }, head, body, foot);
-    nodes.column = column;
-    nodes.body = body;
-    body.addEventListener("scroll", () => fold(body, false), { passive: true });   // more under its edge: the edge fades
-    nodes.links = el("div", { class: "strip-end" }, nodes.busy);   // the busy note beside View code, out of the figure
+    foot.append(nodes.next);
+    nodes.links = el("div", { class: "foot-links" }, nodes.restore);   // Restore, and View code at its right (footed)
+    nodes.links.append(el("div", { class: "foot-spring" }));
     for (const link of lab.links) {
       const button = el("button", { class: "link", type: "button", onclick: () => ask("action", { key: link.key }) }, link.label);
       setTip(button, link.tip);
       nodes.links.append(button);
     }
-    nodes.strip = el("div", { class: "strip" }, nodes.metrics, nodes.links);
-    nodes.stage = el("section", { class: "stage" }, nodes.panels, nodes.figureBox, nodes.strip, nodes.table);
+    foot.append(nodes.links);
+    const column = el("aside", { class: "column" }, head, body, foot);
+    nodes.column = column;
+    nodes.body = body;
+    body.addEventListener("scroll", () => fold(body, false), { passive: true });   // more under its edge: the edge fades
+    nodes.stage = el("section", { class: "stage" }, nodes.panels, nodes.band, nodes.figureBox, nodes.table);
     return el("div", { class: "bench desktop" }, column, nodes.stage, nodes.code);
   }
 
   // The pieces the two phone arrangements share (dense, style.css): the card's "i" and View code as icons; the dock (the
   // column's controls, the only thing that scrolls, the card a sheet over it, the step's title in the sheet's head: the
-  // current pill names the step); the foot (the filled button and Restore as an icon on one row, and the status or the
-  // missing line over it, over the dock's lower edge, only while it says something); the measures' strip.
+  // current pill names the step); the foot (the filled button, "Next bench" beside it once the bench is passed, and
+  // Restore as an icon on one row, and the status line over it, over the dock's lower edge, only while it says
+  // something; never a grey line); the measures' strip.
   function phoneTools(lab) {
     const nodes = page.nodes;
     nodes.info = el("button", { class: "phone-icon info", type: "button", "aria-expanded": "false", "aria-controls": "card-sheet",
@@ -987,9 +1130,9 @@
 
   function phoneFoot(lab) {
     const nodes = page.nodes;
-    nodes.footLine = el("div", { class: "foot-line", dataset: { tap: "tip" } }, nodes.status, " ", nodes.missing);
+    nodes.footLine = el("div", { class: "foot-line", dataset: { tap: "tip" } }, nodes.status);
     nodes.restore.setAttribute("aria-label", lab.restore.label);   // its icon alone (style.css): the filled button keeps the room
-    const row = el("div", { class: "foot-row" }, nodes.filled, nodes.restore);
+    const row = el("div", { class: "foot-row" }, nodes.filled, nodes.next, nodes.restore);   // "Next bench" beside the lab's own
     return el("div", { class: "column-foot" }, nodes.footLine, row);
   }
 
@@ -1096,7 +1239,7 @@
       parts.input = el("input", { type: "checkbox", onchange: (event) => ask("control", { key: control.key, value: event.target.checked }) });
       group.append(el("label", { class: "check" }, parts.input, control.label));
     } else if (control.kind === "buttons") {
-      if (control.label) group.append(el("div", { class: "control-label" }, control.label));
+      if (control.label) group.append(labelLine(control, parts));
       parts.segments = el("div", { class: "segmented column-segmented", role: "radiogroup", "aria-label": control.label });
       const icons = control.icons || [];
       if (icons.length && icons.every(Boolean)) parts.segments.classList.add("marked");
@@ -1147,27 +1290,133 @@
         else line.append(parts.picks);
       }
     } else {
-      group.append(el("div", { class: "control-label" }, control.label));
-      parts.value = el("span", { class: "slider-value" });
-      parts.input = el("input", { class: "slider", type: "range", min: "0", step: "1", "aria-label": control.label });
-      setTip(parts.input, control.shortcuts ? control.fine_tip : "");
-      parts.input.addEventListener("input", (event) => {
-        sliderFill(parts.input);
-        ask("control", { key: control.key, value: Number(event.target.value) }, { transient: true, group: "slider:" + control.key });
-      });
-      parts.input.addEventListener("pointerdown", () => { parts.dragging = true; });
-      const release = () => { parts.dragging = false; };
-      parts.input.addEventListener("pointerup", release);
-      parts.input.addEventListener("pointercancel", release);
-      parts.input.addEventListener("change", release);
+      group.append(labelLine(control, parts));
+      sliderParts(control, parts);
       group.append(el("div", { class: "slider-line" }, parts.value, parts.input));
     }
-    if ("line" in control) {
-      parts.line = el("div", { class: "control-line" });
-      group.append(parts.line);
-    }
-    page.nodes.controls[control.key] = parts;
+    page.nodes.controls[control.key] = parts;                       // no line under a control (the owner's: no grey line)
     return group;
+  }
+
+  // A control's name over its widget, with the slim copies of the commands placed on its line at its right (gui/lab_views
+  // line_commands: step 2's Best basis, D or theta on the line of the control shown last among their places).
+  function labelLine(control, parts) {
+    const label = el("div", { class: "control-label" }, control.label);
+    const copies = WIRE.onLine(control);
+    if (!copies.length) return label;
+    parts.copies = copies.map((action) => {
+      const name = el("span", { class: "chip-label" });
+      const button = el("button", { class: "chip slim", type: "button", onclick: () => ask("action", { key: action.key }) },
+                        action.mark ? icon(action.mark, "mark") : null, name);
+      return { key: action.key, button, label: name };
+    });
+    return el("div", { class: "label-line" }, label, el("div", { class: "foot-spring" }), ...parts.copies.map((copy) => copy.button));
+  }
+
+  // A slider and the text beside it. A slider read at every step it is dragged through sends each (the latest wins); one
+  // read on release (a bench of more than two inputs: a slice takes seconds, gui/lab_views.slider's tracking off) sends
+  // its value once it is let go, its text following the drag meanwhile (the control's texts).
+  function sliderParts(control, parts) {
+    parts.value = el("span", { class: "slider-value" });
+    parts.input = el("input", { class: "slider", type: "range", min: "0", step: "1", "aria-label": control.label });
+    setTip(parts.input, control.shortcuts ? control.fine_tip : "");
+    const send = (transient) => ask("control", { key: control.key, value: Number(parts.input.value) },
+                                    transient ? { transient: true, group: "slider:" + control.key } : undefined);
+    parts.input.addEventListener("input", () => {
+      sliderFill(parts.input);
+      const now = parts.last || control;
+      const texts = WIRE.texts(now);
+      if (WIRE.tracking(now)) send(true);
+      else if (texts && texts[Number(parts.input.value)] !== undefined) parts.value.textContent = texts[Number(parts.input.value)];
+    });
+    parts.input.addEventListener("pointerdown", () => { parts.dragging = true; });
+    const release = () => { parts.dragging = false; };
+    parts.input.addEventListener("pointerup", release);
+    parts.input.addEventListener("pointercancel", release);
+    parts.input.addEventListener("change", () => {
+      release();
+      const now = parts.last || control;
+      if (!WIRE.tracking(now) && Number(parts.input.value) !== now.index) send(false);
+    });
+  }
+
+  // The view's band of a bench of more than two inputs, over the figure (gui/lab_views.ViewBand): ONE line of 32 px, its
+  // axes (a direction mark before the options of the horizontal axis, then of the vertical one, each option its input's
+  // icon beside its name) and its sliders (each after its text, "x3 = 5.68 m", BAND_SLIDER wide), the chip that puts the
+  // slice back at its right end: named while the line holds it (the room of its widest name kept, shown or not), else its
+  // icon alone; two lines only where even that does not fit (fitBand). Its controls are the view's, never the study's.
+  function viewBand(lab) {
+    const controls = lab.controls.filter(WIRE.band);
+    if (!controls.length) return null;
+    const nodes = page.nodes;
+    const axes = el("div", { class: "band-line band-axes" });
+    const sliders = el("div", { class: "band-line band-sliders" });
+    for (const control of controls) {
+      const group = el("div", { class: "band-control" });
+      setTip(group, control.tip);
+      const parts = { group, control };
+      if (control.kind === "buttons") {
+        group.append(icon(BAND_MARKS[control.key] || "axis_across", "mark band-mark"));
+        parts.segments = el("div", { class: "segmented band-segmented", role: "radiogroup", "aria-label": control.label });
+        const icons = control.icons || [];
+        parts.buttons = control.names.map((name, index) => {
+          const button = el("button", { class: "segment", type: "button", role: "radio", onclick: () => {
+            const now = page.nodes.controls[control.key].last;
+            if (now && now.locked[index]) showTipOf(button);
+            else ask("control", { key: control.key, value: index });
+          } }, icons[index] ? icon(icons[index], "mark") : null,
+               el("span", { class: "segment-text" }, el("span", { class: "segment-name" }, name), el("span", { class: "segment-lock" })));
+          parts.segments.append(button);
+          return button;
+        });
+        group.append(parts.segments);
+        axes.append(group);
+      } else if (control.kind === "slider") {
+        sliderParts(control, parts);
+        parts.value.classList.add("band-value");
+        group.append(parts.value, parts.input);
+        sliders.append(group);
+      } else {
+        continue;                                                   // a band has axes and sliders only
+      }
+      nodes.controls[control.key] = parts;
+    }
+    for (const action of lab.chips.filter(WIRE.band)) {             // the chip, named, and its icon alone for a short line
+      const name = el("span", { class: "chip-label" });
+      const chip = el("button", { class: "chip band-chip", type: "button", onclick: () => ask("action", { key: action.key }) },
+                      icon(action.mark || BAND_CHIP, "mark"), name);
+      const short = el("button", { class: "transport-button band-short", type: "button", hidden: true,
+                                   onclick: () => ask("action", { key: action.key }) }, icon(BAND_CHIP));
+      nodes.commands[action.key] = { button: chip, kind: "band", label: name, short };
+      sliders.append(chip, short);
+    }
+    return el("div", { class: "view-band", role: "group", "aria-label": text("web.band") }, axes, sliders);
+  }
+
+  // The band on one line with the chip named, or with its icon alone, or on two lines (the axes over the sliders), as its
+  // width asks (gui/lab_views.ViewBand.fit); the chip keeps the room of its widest name, shown or not (reserve).
+  function fitBand() {
+    const band = page.nodes.band;
+    if (!band || !band.isConnected || !band.offsetParent) return;
+    const found = Object.values(page.nodes.commands).find((command) => command.kind === "band");
+    const offered = !!(found && found.offered);
+    const oneLine = () => {
+      const items = [...band.querySelectorAll(".band-control, .band-chip, .band-short")].filter((node) => !node.hidden);
+      const tops = items.map((node) => node.offsetTop + node.offsetHeight / 2);
+      return !tops.length || Math.max(...tops) - Math.min(...tops) < 6;
+    };
+    const sliders = band.querySelector(".band-sliders");
+    const holds = () => sliders.scrollWidth <= band.clientWidth - parseFloat(getComputedStyle(band).paddingLeft) + 1;
+    for (const way of ["named", "short", "wrapped", "wrapped short"]) {
+      band.classList.toggle("two", way.startsWith("wrapped"));
+      const short = way.endsWith("short");
+      if (found) {
+        found.button.hidden = short;
+        found.button.classList.toggle("reserve", !offered);        // its room kept while the slice is its own: not shown
+        found.short.hidden = !offered || !short;
+      }
+      if (way === "named" || way === "short" ? oneLine() : way === "wrapped short" || holds()) break;   // two lines: the
+    }                                                                                                    // chip named if it fits
   }
 
   // The part of a slider's track travelled (style.css's --fill: WebKit draws it from there; Mozilla has its own progress).
@@ -1232,29 +1481,34 @@
   function updateBench(view) {
     const lab = view.bench.lab;
     const nodes = page.nodes;
-    nodes.cardHeading.textContent = lab.card.heading;
-    nodes.cardRows.replaceChildren(...lab.card.rows.map(([label, value, kind]) =>
-      el("div", { class: "card-row" }, el("span", { class: "card-label", html: label }), el("span", { class: "card-value kind-" + kind, html: value }))));
+    fillCard(nodes.cardHeading, nodes.cardRows, lab.card);
     nodes.card.hidden = !(lab.card.heading || lab.card.rows.length);
-    for (const control of lab.controls) updateControl(control);
+    for (const control of lab.controls) updateControl(control, lab);
     for (const action of commandsOf(lab)) updateCommand(action);
     if (nodes.stageName) {
       nodes.stageName.textContent = lab.stage;
       setTip(nodes.stageName, lab.stage);
     }
+    // the status line: the verdict ("✓ Bench complete", "✗ Bench not complete") or a result discarded; what the study
+    // lacks (Lab.hint) is its tooltip, never a grey line of its own (gui/lab_views.LabView.show_foot)
     nodes.status.textContent = lab.status;
-    starify(nodes.status);
     nodes.status.classList.toggle("ok", lab.status_kind === "ok");
     nodes.status.hidden = !lab.status;
-    nodes.missing.textContent = lab.missing;
-    nodes.missing.hidden = !lab.missing;
+    setTip(nodes.status, WIRE.statusTip(lab));
+    const next = WIRE.next(lab);
     if (nodes.filled && lab.filled) {
       const filled = lab.filled;
       nodes.filled.textContent = filled.label;
       nodes.filled.setAttribute("aria-disabled", filled.enabled ? "false" : "true");
       nodes.filled.classList.toggle("disabled", !filled.enabled);
+      nodes.filled.classList.toggle("demoted", WIRE.demoted(lab));  // under "Next bench": a second command, outlined
       if (filled.toggle) nodes.filled.setAttribute("aria-pressed", String(filled.checked));
-      setTip(nodes.filled, filled.tip);
+      setTip(nodes.filled, filled.tip);                             // why it cannot be pressed, when it cannot (Lab.missing)
+    }
+    nodes.next.hidden = !next;
+    if (next) {
+      nodes.next.textContent = next.label;
+      setTip(nodes.next, next.tip);
     }
     nodes.metrics.replaceChildren(...lab.metrics.map(metric));
     if (lab.alert) {
@@ -1268,33 +1522,87 @@
     nodes.keys.textContent = lab.keys || "";
     if (lab.keys) nodes.canvas.setAttribute("aria-describedby", "figure-keys");
     else nodes.canvas.removeAttribute("aria-describedby");
-    nodes.canvas.style.cursor = lab.cursor || "";
+    nodes.canvas.style.cursor = WIRE.cursor(lab);
+    updateReveal(lab);
     if (lab.table) {
       nodes.table.hidden = false;
       nodes.table.replaceChildren(tableNode(lab.table));
     } else {
       nodes.table.hidden = true;
     }
+    if (nodes.transport) {                                          // a row with no icon offered and no name to say
+      const shown = lab.transport.some((action) => action.visible) || !!lab.stage;     // leaves: what stands under it
+      nodes.transport.hidden = !shown;                              // (the table) takes its room
+    }
+    if (nodes.blocks) updateBlocks(WIRE.blocks(lab));
     if (nodes.footLine) {                                           // a phone: the card behind its "i", the foot's line when it says
       nodes.info.hidden = nodes.card.hidden;                        // something, an empty transport row folded away
       nodes.info.setAttribute("aria-label", lab.card.heading || lab.title);
       nodes.sheet.setAttribute("aria-label", lab.card.heading || lab.title);
       if (nodes.card.hidden) openSheet(false);
-      const said = [lab.status, lab.missing].filter(Boolean).join("\n");
-      setTip(nodes.footLine, said);
-      nodes.bench.classList.toggle("said", !!said);
-      if (nodes.transport) {
-        const shown = lab.transport.some((action) => action.visible) || !!lab.stage;
-        nodes.transport.hidden = !shown;
-      }
+      setTip(nodes.footLine, [lab.status, WIRE.statusTip(lab)].filter(Boolean).join("\n"));
+      nodes.bench.classList.toggle("said", !!lab.status);
       fold(nodes.metrics, !nodes.stage.classList.contains("beside"));
       fold(nodes.dock, false);
     }
     fitSegments();
+    fitBand();
     if (nodes.body) fold(nodes.body, false);                       // the desktop's column: more under its edge, a fade
   }
 
-  function updateControl(control) {
+  // The card of what the step works on (gui/lab_views.LabView.show_received): its heading, with what the response is
+  // quietly at its right end (a row of the kind "aside"); then either the problem in its standard form (rows of the
+  // kinds "goal" and "bound": its words in a muted column as wide as the widest, what they govern in the serif, the goal
+  // larger and semibold, each variable in italics) or one row a label and its value, the value in its kind's ink. A row
+  // of four has a tooltip of its own, its fourth.
+  function fillCard(heading, rowsNode, card) {
+    const rows = card.rows.filter((row) => row[2] !== "aside");
+    const aside = card.rows.filter((row) => row[2] === "aside").map((row) => row[1]).join(" · ");
+    heading.replaceChildren(el("span", { class: "card-heading-name" }, card.heading));
+    if (aside) heading.append(el("span", { class: "card-aside", html: aside }));
+    const posed = rows.some((row) => row[2] === "goal" || row[2] === "bound");
+    rowsNode.classList.toggle("problem", posed);
+    rowsNode.replaceChildren(...rows.map(([label, value, kind, tip]) => {
+      const row = posed
+        ? el("div", { class: "problem-row" }, el("span", { class: "problem-word", html: label }),
+             el("span", { class: "problem-value " + (kind === "goal" ? "goal" : "bound"), html: mathematics(value) }))
+        : el("div", { class: "card-row" }, el("span", { class: "card-label", html: label }), el("span", { class: "card-value kind-" + kind, html: value }));
+      if (tip) setTip(row, tip);
+      return row;
+    }));
+  }
+
+  // A bound or a goal of the problem as a paper sets it (gui/lab_views.mathematics): each variable, a letter standing
+  // alone (x, y, f, m, δ, σ, A), in italics, up to the last "]" (what follows it, a unit, stays upright). Only the text
+  // between tags is touched.
+  function mathematics(value) {
+    const cut = value.lastIndexOf("]") + 1;
+    const head = cut ? value.slice(0, cut) : value, tail = cut ? value.slice(cut) : "";
+    const lone = (part) => part.replace(/[A-Za-zͰ-Ͽ]+/g, (word) => (word.length === 1 ? "<i>" + word + "</i>" : word));
+    return head.split(/(<[^>]*>|&[#\w]+;)/).map((part, index) => (index % 2 ? part : lone(part))).join("") + tail;
+  }
+
+  // The card's slot, the bench's (gui/lab_views.CardSlot.room): the taller of the bench's problem as laid out (heading and
+  // aside included) and of a card of the most rows a later step's received card holds, measured in the page's faces at
+  // the column's width, so the same in the bench's three steps (a card of fewer rows top-aligned in it).
+  function sizeSlot(bench) {
+    const nodes = page.nodes, slot = WIRE.slot(bench);
+    if (!nodes.slot || !slot || !nodes.slot.isConnected) return;
+    const probe = (card) => {
+      const heading = el("div", { class: "card-heading" }), rows = el("div", { class: "card-rows" });
+      const node = el("div", { class: "card probe", "aria-hidden": "true" }, heading, rows);
+      nodes.slot.append(node);
+      fillCard(heading, rows, card);
+      const tall = node.getBoundingClientRect().height;
+      node.remove();
+      return tall;
+    };
+    const posed = slot.problem && slot.problem.length ? probe({ heading: text("lab.lhs.problem"), rows: slot.problem }) : 0;
+    const plain = probe({ heading: "x", rows: Array.from({ length: slot.rows || 0 }, () => ["x", "0", "plain"]) });
+    nodes.slot.style.height = Math.ceil(Math.max(posed, plain)) + "px";
+  }
+
+  function updateControl(control, lab) {
     const parts = page.nodes.controls[control.key];
     if (!parts) return;
     parts.last = control;
@@ -1321,20 +1629,46 @@
       });
     } else {
       parts.value.textContent = control.text;
+      const texts = WIRE.texts(control);                            // a band's slider: as wide as its widest text, so that
+      if (texts && parts.value.classList.contains("band-value")) {  // nothing moves as it is dragged
+        const key = language + "|" + texts.length + "|" + texts[0] + "|" + texts[texts.length - 1];
+        if (parts.reserved !== key && parts.value.isConnected) {
+          parts.reserved = key;
+          reserveName(parts.value, texts);
+        }
+      }
       parts.input.max = String(Math.max(control.top, 0));
       parts.input.disabled = control.top <= 0;
       if (!parts.dragging) parts.input.value = String(control.index);
       sliderFill(parts.input);
     }
-    if (parts.line) parts.line.textContent = control.line || "";
+    for (const copy of parts.copies || []) {                        // the slim copies on its label's line
+      const action = WIRE.onLine(control).find((each) => each.key === copy.key) || {};
+      const chip = lab && lab.chips.find((each) => each.key === copy.key);
+      const here = chip && WIRE.placed(chip) ? WIRE.placed(chip) === control.key : action.visible !== false;
+      copy.button.hidden = !(here && (action.visible !== false));
+      copy.button.disabled = action.enabled === false;
+      copy.label.textContent = action.label || (chip && chip.label) || "";
+      setTip(copy.button, action.tip || (chip && chip.tip) || "");
+    }
   }
 
   function updateCommand(action) {
     const found = page.nodes.commands[action.key];
     if (!found) return;
     const button = found.button;
-    button.hidden = !action.visible && found.kind !== "icon";
-    button.style.visibility = !action.visible && found.kind === "icon" ? "hidden" : "";
+    if (found.kind === "band") {                                    // the band's chip (fitBand shows it, named or as its icon)
+      found.offered = !!action.visible;
+      button.disabled = found.short.disabled = !action.enabled;
+      found.label.textContent = action.label;
+      reserveName(found.label, null);
+      setTip(button, action.tip);
+      found.short.setAttribute("aria-label", action.label);
+      setTip(found.short, action.label);
+      return;
+    }
+    button.hidden = (!action.visible || (found.kind === "chip" && !!WIRE.placed(action))) && found.kind !== "icon";   // a chip
+    button.style.visibility = !action.visible && found.kind === "icon" ? "hidden" : "";                         // placed: its copy
     button.disabled = !action.enabled;
     if (action.toggle) button.setAttribute("aria-pressed", String(action.checked));
     if (found.kind === "featured") {
@@ -1351,15 +1685,227 @@
     }
   }
 
+  // The room of a text's widest among those it may take (a band slider's texts; with none given, the band's chip: every
+  // "lab.view.slice.*" of the catalogs, section.places' names), kept as its label's least width so that the band breaks the same way in a
+  // bench's three steps and as the slice is pinned and released.
+  const measure = document.createElement("canvas").getContext("2d");
+  function reserveName(label, places) {
+    const names = places || Object.keys(catalogs[language] || {}).filter((key) => /^lab\.view\.slice\.[a-z]+$/.test(key)).map((key) => text(key));
+    if (!label.isConnected || !names.length) return;
+    measure.font = getComputedStyle(label).font;
+    const widest = Math.max(...names.map((name) => measure.measureText(name).width));
+    label.style.minWidth = Math.ceil(widest) + "px";
+  }
+
   function metric(item) {
     const title = el("div", { class: "metric-title" });
     if (item.color) title.append(el("span", { class: "metric-dot", style: "color:" + item.color }, "●"));
     title.append(el("span", { html: item.title }));
-    const line = el("div", { class: "metric-line" }, starify(el("span", { class: "metric-value kind-" + item.kind, html: item.value })));
+    const line = el("div", { class: "metric-line" }, el("span", { class: "metric-value kind-" + item.kind, html: item.value }));
     if (item.detail) line.append(el("span", { class: "metric-detail kind-" + item.detail_kind, html: item.detail }));
     const node = el("div", { class: "metric" + (item.strong ? " strong" : ""), tabindex: "0", dataset: { tap: "tip" } }, title, line);
     setTip(node, item.tip);
     return node;
+  }
+
+  // ---------------------------------------------------------------- "Show f" (gui/lab_views.show_reveal, place_reveal)
+  function updateReveal(lab) {
+    const nodes = page.nodes, reveal = WIRE.reveal(lab);
+    if (!nodes.reveal) return;
+    if (reveal) {
+      nodes.revealLabel.textContent = reveal.label;
+      nodes.reveal.setAttribute("aria-pressed", String(!!reveal.checked));
+      setTip(nodes.reveal, reveal.tip);
+    }
+    placeReveal(lab);
+  }
+
+  // At the right end and the top of the box the figure's plan keeps for it (CSS pixels from the figure's top left), as
+  // tall as that box; hidden where it is not offered or the plan keeps no box (never over a head or a legend).
+  function placeReveal(lab) {
+    const nodes = page.nodes, reveal = WIRE.reveal(lab);
+    if (!nodes.reveal) return;
+    if (page.layout !== "desktop") {                                // a phone: a chip of the dock, while it is offered
+      nodes.reveal.hidden = !(reveal && reveal.offered);
+      return;
+    }
+    const box = reveal && reveal.offered && reveal.box;
+    nodes.reveal.hidden = !box || !page.meta || !page.meta.width;
+    if (nodes.reveal.hidden) return;
+    const [x, top, wide, tall] = box;
+    nodes.reveal.style.height = tall + "px";
+    nodes.reveal.style.left = Math.max(0, Math.round(x + wide - nodes.reveal.offsetWidth)) + "px";
+    nodes.reveal.style.top = Math.max(0, Math.round(top - (page.meta.top || 0))) + "px";
+  }
+
+  // ---------------------------------------------------------------- the step's blocks (gui/blocks.py), the desktop's
+  // Each block a card of the received card's look in the column, between the controls and the foot: its heading (its
+  // tooltip the block's), its muted note, and the figure the lab draws, shown pixel for pixel at the device's density. A
+  // block of no most takes the column's room left (the table), one whose most is above its least that room up to its most;
+  // a block of a fixed height keeps it, never stretched; a most of 0 is its heading alone. A card is kept by its block's
+  // key; the pointer over its figure, a press and the wheel or the slim bar of a table longer than its block go to the
+  // lab (block_pointer, block_press, block_scroll).
+  function updateBlocks(blocks) {
+    const nodes = page.nodes, cards = nodes.blockCards;
+    const order = blocks.map((block) => block.key);
+    for (const block of blocks) {
+      let card = cards[block.key];
+      if (!card) card = cards[block.key] = blockCard(block.key);   // a new canvas: drawBench asks for its pixels (needBlocks)
+      card.block = block;
+      card.heading.textContent = block.title;
+      setTip(card.heading, block.tip || "");
+      card.note.textContent = block.note || "";
+      card.note.hidden = !block.note;
+      const bare = block.most === 0;
+      const grows = block.most === null || block.most === undefined || block.most > block.least;
+      card.holder.hidden = bare;
+      card.node.classList.toggle("grows", grows && !bare);
+      card.holder.style.minHeight = bare ? "" : block.least + "px";
+      card.holder.style.height = grows || bare ? "" : Math.max(block.least, block.most || 0) + "px";
+      card.holder.style.maxHeight = grows && block.most ? block.most + "px" : "";
+    }
+    const shown = [...nodes.blocks.children];
+    if (shown.length !== order.length || shown.some((node, index) => node.dataset.key !== order[index])) {
+      for (const card of Object.values(cards)) card.node.hidden = true;
+      nodes.blocks.replaceChildren(...order.map((key) => { cards[key].node.hidden = false; return cards[key].node; }));
+    }
+    for (const [key, card] of Object.entries(cards)) card.node.hidden = !order.includes(key);
+    nodes.blocks.hidden = !order.length;
+    if (nodes.body) nodes.body.classList.toggle("blocked", !!order.length);
+    nodes.blocks.classList.toggle("grows", blocks.some((block) => block.most === null || block.most === undefined || block.most > block.least));
+    for (const key of order) {                                      // a card of a most never taller than its content: its
+      const card = cards[key], most = card.block.most;              // margins, heading, note and the figure's most
+      card.node.style.maxHeight = "";
+      if (card.node.classList.contains("grows") && most) {
+        const style = getComputedStyle(card.node), gap = parseFloat(style.rowGap) || 0;
+        const chrome = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) + card.heading.offsetHeight + gap
+                       + (card.note.hidden ? 0 : card.note.offsetHeight + gap);
+        card.node.style.maxHeight = Math.ceil(chrome + most) + "px";
+      }
+      drawScroll(card);
+    }
+  }
+
+  function blockCard(key) {
+    const heading = el("div", { class: "card-heading block-heading" });
+    const note = el("div", { class: "block-note", hidden: true });
+    const canvas = el("canvas", { class: "block-figure" });
+    const thumb = el("div", { class: "block-thumb" });
+    const bar = el("div", { class: "block-scroll", role: "scrollbar", "aria-orientation": "vertical", hidden: true }, thumb);
+    const holder = el("div", { class: "block-plot" }, canvas);
+    const node = el("section", { class: "card block", dataset: { key } }, heading, note, holder, bar);
+    const card = { key, node, heading, note, holder, canvas, bar, thumb, block: null, first: 0, wheel: 0 };
+    const point = (event) => {
+      const box = canvas.getBoundingClientRect();
+      return { x: event.clientX - box.left, y: event.clientY - box.top };
+    };
+    canvas.addEventListener("pointermove", (event) => {
+      if (event.pointerType !== "mouse") return;
+      const at = point(event);
+      ask(WIRE.op.blockPointer, { key, kind: "move", x: at.x, y: at.y }, { transient: true, group: "block-move:" + key });
+    });
+    canvas.addEventListener("pointerleave", (event) => {            // its own block's group: never replaced by another's move
+      if (event.pointerType === "mouse") ask(WIRE.op.blockPointer, { key, kind: "leave", x: 0, y: 0 }, { transient: true, group: "block-move:" + key });
+    });
+    canvas.addEventListener("pointerdown", (event) => {
+      if (event.button > 0) return;
+      const at = point(event);
+      ask(WIRE.op.blockPress, { key, x: at.x, y: at.y });
+    });
+    const wheel = (event) => {                                      // the wheel over a table that scrolls: its rows, never the column
+      const scroll = card.block && card.block.scroll;
+      if (!scroll || scroll.count <= scroll.rows) return;
+      event.preventDefault();
+      card.wheel += event.deltaMode === 1 ? event.deltaY * WHEEL_ROW : event.deltaMode === 2 ? event.deltaY * scroll.rows * WHEEL_ROW : event.deltaY;
+      const rows = Math.trunc(card.wheel / WHEEL_ROW);              // a notch of the wheel: three rows
+      if (!rows) return;
+      card.wheel -= rows * WHEEL_ROW;
+      scrollTo(card, card.first + rows);
+    };
+    canvas.addEventListener("wheel", wheel, { passive: false });
+    bar.addEventListener("wheel", wheel, { passive: false });
+    bar.addEventListener("pointerdown", (event) => {                // the thumb dragged, or a page above or under it
+      const scroll = card.block && card.block.scroll;
+      if (!scroll || event.button > 0) return;
+      event.preventDefault();
+      const track = bar.getBoundingClientRect(), thumbBox = thumb.getBoundingClientRect();
+      if (event.target !== thumb) {
+        scrollTo(card, card.first + (event.clientY < thumbBox.top ? -scroll.rows : scroll.rows));
+        return;
+      }
+      const from = event.clientY, start = card.first, travel = Math.max(track.height - thumbBox.height, 1);
+      try { bar.setPointerCapture(event.pointerId); } catch (error) { /* a pointer gone already */ }
+      const move = (moved) => scrollTo(card, Math.round(start + (moved.clientY - from) / travel * (scroll.count - scroll.rows)));
+      const up = () => { bar.removeEventListener("pointermove", move); bar.removeEventListener("pointerup", up); bar.removeEventListener("pointercancel", up); };
+      bar.addEventListener("pointermove", move);
+      bar.addEventListener("pointerup", up);
+      bar.addEventListener("pointercancel", up);
+    });
+    return card;
+  }
+
+  // The table's first row asked of the lab (Lab.scroll_to), the bar moved at once (the lab's drawing follows).
+  function scrollTo(card, first) {
+    const scroll = card.block && card.block.scroll;
+    if (!scroll) return;
+    const to = Math.min(Math.max(first, 0), Math.max(scroll.count - scroll.rows, 0));
+    if (to === card.first) return;
+    card.first = to;
+    placeThumb(card);
+    ask(WIRE.op.blockScroll, { key: card.key, first: to }, { transient: true, group: "block-scroll:" + card.key });
+  }
+
+  // The slim bar of a table longer than its block (gui/blocks.BlockCard.show_scroll, place_scroll): in the card's right
+  // margin, centred in it, from the top of the rows to their foot (the rows' band in the block's figure, Lab.scrolled);
+  // hidden where every row is on show or the block names no scroll.
+  function drawScroll(card) {
+    const scroll = card.block && card.block.scroll;
+    card.bar.hidden = !scroll || scroll.count <= scroll.rows || card.holder.hidden;
+    if (card.bar.hidden) return;
+    card.first = scroll.first;
+    card.bar.setAttribute("aria-label", card.block.title);
+    card.bar.setAttribute("aria-valuemin", "0");
+    card.bar.setAttribute("aria-valuemax", String(scroll.count - scroll.rows));
+    const top = card.holder.offsetTop + scroll.top;
+    const high = Math.max(Math.min(scroll.height, card.holder.offsetHeight - scroll.top), 1);
+    card.bar.style.left = (card.node.clientWidth - CARD_MARGIN + (CARD_MARGIN - SCROLL_WIDTH) / 2) + "px";
+    card.bar.style.top = top + "px";
+    card.bar.style.height = high + "px";
+    placeThumb(card);
+  }
+
+  function placeThumb(card) {
+    const scroll = card.block.scroll, high = parseFloat(card.bar.style.height) || 0;
+    const tall = Math.max(high * scroll.rows / scroll.count, Math.min(16, high));
+    const span = Math.max(scroll.count - scroll.rows, 1);
+    card.thumb.style.height = tall + "px";
+    card.thumb.style.top = ((high - tall) * card.first / span) + "px";
+    card.bar.setAttribute("aria-valuenow", String(card.first));
+  }
+
+  // The blocks' pixels as the lab drew them (meta blocks, the worker's blockPixels), one drawn pixel to one pixel of the
+  // screen; a block the lab did not draw again keeps its picture.
+  function drawBlocks(meta, pixels) {
+    const cards = page.nodes.blockCards || {};
+    for (const [key, drawn] of Object.entries(meta)) {
+      const card = cards[key];
+      if (!card || !drawn) continue;
+      const ratio = drawn.ratio || 1;
+      const buffer = pixels[key];
+      if (buffer) {
+        const width = drawn.pixel_width || Math.round(drawn.width * ratio);
+        const height = drawn.pixel_height || Math.round(buffer.byteLength / 4 / width);
+        if (card.canvas.width !== width) card.canvas.width = width;
+        if (card.canvas.height !== height) card.canvas.height = height;
+        card.canvas.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(buffer), width, height), 0, 0);
+      }
+      if (card.canvas.width) {
+        card.canvas.style.width = card.canvas.width / ratio + "px";
+        card.canvas.style.height = card.canvas.height / ratio + "px";
+        align(card.canvas, ratio === Math.min(window.devicePixelRatio || 1, MOST_RATIO));
+      }
+      drawScroll(card);
+    }
   }
 
   function tableNode(table) {
@@ -1415,7 +1961,8 @@
     nodes.panels.hidden = !switching;
     if (!nodes.panels.hidden) {
       if (!panels.includes(page.panel)) page.panel = panels[0];
-      const names = { plane: text("web.panel.plane"), space: text("web.panel.space"),
+      const names = { plane: text("web.panel.plane"),               // a bench of several responses: its objective space
+                      space: page.view.bench.many ? text("lab.pareto.doe.space_title") : text("web.panel.space"),
                       third: text("web.panel.third." + page.view.bench.step_key) };
       const focused = nodes.panels.contains(document.activeElement);   // a tab chosen by the arrows keeps the focus
       nodes.panels.replaceChildren(...panels.map((panel) => el("button", {
@@ -1433,6 +1980,10 @@
   // 49 CSS pixels high): the canvas is moved by that fraction, so that its pixels lie on the screen's and stay crisp.
   function snap(canvas, exact) {
     page.snapped = exact;
+    align(canvas, exact);
+  }
+
+  function align(canvas, exact) {                                   // the figure's, and a block's
     canvas.style.transform = "";
     if (!exact) return;
     const ratio = window.devicePixelRatio || 1;
@@ -1507,6 +2058,7 @@
           return;
         }
         if (page.screen === "bench") fold(page.nodes.body, false);  // the column taller or shorter: its fade follows
+        if (page.screen === "bench") fitBand();                     // the band one line or two, as its width asks
         if (page.screen === "bench" && page.meta && stale()) ask("render", {}, { transient: true, group: "render" });
       });
     }
@@ -1518,6 +2070,7 @@
   function turned() {
     hideTip();                                                      // its owner has moved: a tooltip never stays where it was
     if (page.screen === "bench") fitSegments();                    // the column's or the dock's width may have changed
+    if (page.screen === "bench") fitBand();
     if (page.screen === "bench") placeCode();                      // the code panel beside or over, at its width for this window
     if (page.screen === "cover") {                                  // the cover composed again for the new size, once a frame
       cancelAnimationFrame(coverFrame);
