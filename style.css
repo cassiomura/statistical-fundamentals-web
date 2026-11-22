@@ -12,20 +12,20 @@
  * the sheet, the measures, shared), `.portrait` or `.compact` (landscape) for where they stand; its bar is
  * `.bar.in-bench.phone`; touch targets are 44 px, 8 px apart: the phone's part, at the end, is kept as it is.
  */
-@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=84e70223ca2e") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=84e70223ca2e") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=84e70223ca2e") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=ec188d331459") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=ec188d331459") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=ec188d331459") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 /* the glyphs Selawik lacks (Greek, subscripts, the minus sign, arrows): DejaVu's, as the figure draws them, the
    subscripts lowered under the baseline (build.lower_subscripts); every address stamped ?v=BUILD by web/build.py, the
    preload of index.html the same address */
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=84e70223ca2e") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=84e70223ca2e") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=ec188d331459") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=ec188d331459") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
 /* the problem card's serif: matplotlib's own STIXGeneral (regular, italic, bold, bold italic), cut by web/build.py to the
    glyphs the problems of the benches write (build.serif_characters), its licence beside it (fonts/LICENSE_STIX.txt) */
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif.ttf?v=84e70223ca2e") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif-italic.ttf?v=84e70223ca2e") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold.ttf?v=84e70223ca2e") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold-italic.ttf?v=84e70223ca2e") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif.ttf?v=ec188d331459") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-italic.ttf?v=ec188d331459") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold.ttf?v=ec188d331459") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold-italic.ttf?v=ec188d331459") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
 
 :root {
   --window: var(--theme-deep);
@@ -543,6 +543,10 @@ body.busy { cursor: progress; }
 .stage { flex: 1; min-width: 0; min-height: 0; overflow: auto; background: var(--card);
          padding: 10px 20px 0 20px; display: flex; flex-direction: column; gap: 4px; }
 .figure-box { position: relative; flex: none; }
+/* the figure's pixels over the screen's ratio may pass its box by a fraction (1038 / 1.25 = 830.4), and snap() moves it
+   by another: clipped here, or that fraction scrolls the stage, its scroll bar takes 15 px, a narrower figure is asked,
+   the bar goes and a wider one is asked, without end (a Windows screen at 125 % or 150 %) */
+.bench.desktop .figure-box { overflow: hidden; }
 .figure { display: block; touch-action: none; outline-offset: -2px; }
 .figure.pointed:focus-visible { outline: none; }
 .figure[data-panel="third"] { touch-action: pan-y; }

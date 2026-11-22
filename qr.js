@@ -12,7 +12,7 @@
     if (kept.language === "en" || kept.language === "pt_BR") language = kept.language;
     else if ((navigator.language || "").toLowerCase().startsWith("pt")) language = "pt_BR";
   } catch (error) { /* nothing kept */ }
-  fetch("texts.json?v=84e70223ca2e").then((response) => response.json()).then((catalogs) => {
+  fetch("texts.json?v=ec188d331459").then((response) => response.json()).then((catalogs) => {
     const text = (key, params) => {
       let found = (catalogs[language] || {})[key] ?? catalogs.en[key] ?? "[" + key + "]";
       if (params) found = found.replace(/\{(\w*)\}/g, (whole, name) => (name in params ? String(params[name]) : whole));
