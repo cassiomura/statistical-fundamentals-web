@@ -5,9 +5,9 @@
  *   the cover     the four benches on one thread, the Student | Teacher switch, the bar (share, sound, language);
  *                 in a desktop's window placed by gui/cover.py's numbers (arrangeCover, its page's air tightened where
  *                 the cards would not hold the first screen: PAGE_TIGHT), larger past full HD; a passed card's check
- *                 after its name; the title's column in its own order, on purpose: the version's mark, title, lead, then
- *                 the switch (the desktop puts the switch first; a visitor of the site reads what it is before choosing
- *                 a mode)
+ *                 after its name, the bench's facts under it (inputs, objectives, constraints); the title's column in
+ *                 its own order, on purpose: the version's mark, title, lead, then the switch (the desktop puts the
+ *                 switch first; a visitor of the site reads what it is before choosing a mode)
  *   a bench       the bar (Home, the bench's name and its check once passed, the pills of its steps), the column of the
  *                 step's controls and its blocks, the figure (drawn by the lab in Python, as RGBA pixels), View code
  *
@@ -781,10 +781,13 @@
                       el("span", { class: "stop-name" }, stop.name), worth));
     });
     const open = () => { if (!card.locked) ask("open", { bench: card.key }); else showTipOf(button); };
+    // the bench's facts under its name (responses.facts: its inputs, objectives, constraints), read with the card as its
+    // sentence is
+    const facts = card.facts ? el("span", { class: "card-facts" }, card.facts) : null;
     const button = el("button", { class: "bench-card" + (card.locked ? " locked" : ""), type: "button", "data-bench": card.key,
                                   "aria-disabled": card.locked ? "true" : null, onclick: open },
                       el("span", { class: "node", "aria-hidden": "true" }, card.number), picture,
-                      el("span", { class: "card-texts" }, name, el("span", { class: "challenge" }, card.challenge), track),
+                      el("span", { class: "card-texts" }, name, facts, el("span", { class: "challenge" }, card.challenge), track),
                       card.locked ? icon("padlock", "card-lock") : el("span", { class: "arrow", "aria-hidden": "true" }, "→"));
     setTip(button, card.locked ? card.lock_tip : card.open_tip);
     return el("li", { class: "journey-stop" }, button);

@@ -12,20 +12,20 @@
  * the sheet, the measures, shared), `.portrait` or `.compact` (landscape) for where they stand; its bar is
  * `.bar.in-bench.phone`; touch targets are 44 px, 8 px apart: the phone's part, at the end, is kept as it is.
  */
-@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=736eab0c0b2d") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=736eab0c0b2d") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=736eab0c0b2d") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=b99704786ba7") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=b99704786ba7") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=b99704786ba7") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 /* the glyphs Selawik lacks (Greek, subscripts, the minus sign, arrows): DejaVu's, as the figure draws them, the
    subscripts lowered under the baseline (build.lower_subscripts); every address stamped ?v=BUILD by web/build.py, the
    preload of index.html the same address */
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=b99704786ba7") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=b99704786ba7") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
 /* the problem card's serif: matplotlib's own STIXGeneral (regular, italic, bold, bold italic), cut by web/build.py to the
    glyphs the problems of the benches write (build.serif_characters), its licence beside it (fonts/LICENSE_STIX.txt) */
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif-italic.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold-italic.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif.ttf?v=b99704786ba7") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-italic.ttf?v=b99704786ba7") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold.ttf?v=b99704786ba7") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold-italic.ttf?v=b99704786ba7") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
 
 :root {
   --window: var(--theme-deep);
@@ -259,6 +259,10 @@ body.busy { cursor: progress; }
 .card-texts { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .card-name { font-size: var(--fs-heading); font-weight: 600; display: flex; align-items: baseline; gap: 12px; }
 .challenge { color: var(--muted); font-size: var(--fs-body); text-wrap: pretty; }
+/* the bench's facts under its name (bridge: responses.facts): the track's small size, a quiet accent ink told apart from
+   the muted sentence, tabular figures; one line on a desktop's cover (.cover.arranged), free to wrap on a phone */
+.card-facts { color: color-mix(in srgb, var(--accent) 80%, var(--muted)); font-size: var(--fs-small); font-weight: 600;
+              font-variant-numeric: tabular-nums; line-height: 1.2; margin-top: -4px; text-wrap: pretty; }   /* close under the name */
 .arrow { flex: none; color: var(--accent); font-size: var(--fs-display); opacity: 0.4; }
 .bench-card:focus-visible .arrow { opacity: 1; }
 .bench-card.locked { cursor: default; }
@@ -301,12 +305,20 @@ body.busy { cursor: progress; }
 .cover.arranged .bench-card .picture { width: var(--picture); height: var(--picture); margin: 0; }
 .cover.arranged .card-texts { gap: calc(6px * var(--type)); }
 .cover.arranged .card-name { font-size: calc(var(--fs-heading) * var(--type)); }
+.cover.arranged .card-facts { font-size: calc(var(--fs-small) * var(--type)); margin-top: calc(-4px * var(--type)); white-space: nowrap; }
 .cover.arranged .challenge { font-size: calc(var(--fs-body) * var(--type)); }
 .cover.arranged .track { margin-top: calc(8px * var(--type)); }
 .cover.arranged .stop { width: calc(96px * var(--type)); }
 .cover.arranged .stop-mark { width: calc(17px * var(--type)); height: calc(17px * var(--type)); }
 .cover.arranged .stop-name { font-size: calc(var(--fs-small) * var(--type)); }
 .cover.arranged .track-worth { font-size: calc(var(--fs-caption) * var(--type)); }
+/* the least screens (.tight: 1280 x 720, where the page's air has already given way): the room of the facts line taken
+   back inside the card, so that four cards still hold the first screen: the card's padding 11 -> 7 px above and below
+   (its picture keeps its size: the row is the same), the track 8 -> 3 px under the sentence, a stop's mark 4 -> 2 px
+   over its name */
+.cover.arranged.tight .bench-card { padding-top: 7px; padding-bottom: 7px; }
+.cover.arranged.tight .track { margin-top: calc(3px * var(--type)); }
+.cover.arranged.tight .stop { gap: calc(2px * var(--type)); }
 
 /* ------------------------------------------------------------------ a bench: the workbench (gui/lab_views.py) */
 .bench { flex: 1; min-width: 0; min-height: 0; display: flex; background: var(--card); position: relative; }
@@ -769,15 +781,20 @@ body.busy .busy-note { opacity: 0.95; }
   .cover-title { font-size: 31px; }
   .journey::before { left: 21px; }
   .bench-card { display: grid; grid-template-columns: 44px 96px minmax(0, 1fr); align-items: start; gap: 6px 12px;
-                grid-template-areas: "node picture name" "node picture challenge" "node track track"; padding: 14px 14px 14px 0; }
+                grid-template-areas: "node picture name" "node picture facts" "node picture challenge" "node track track";
+                padding: 14px 14px 14px 0; }
   .bench-card > .node { width: 44px; grid-area: node; align-self: center; }
   .bench-card::after { left: 44px; }
   .bench-card .picture { width: 96px; height: 96px; margin: 0; grid-area: picture; }
   .card-texts { display: contents; }
   .card-name { grid-area: name; font-size: 18px; }
+  .card-facts { grid-area: facts; }
+  /* the texts are the grid's own items here (.card-texts has no box): a locked card dims each, as its texts' box does */
+  .bench-card.locked .card-name, .bench-card.locked .card-facts, .bench-card.locked .challenge, .bench-card.locked .track { opacity: 0.45; }
   .challenge { grid-area: challenge; font-size: 13px; }
   .track { grid-area: track; margin-top: 4px; }
   .card-lock { position: absolute; top: 14px; right: 14px; }
+  .bench-card.locked .card-name { padding-right: 26px; }       /* room for the lock: a long title breaks before it, never under it */
   .track { width: 100%; }
   .stop { width: auto; flex: 1 1 0; min-width: 0; }
   .stop-name { font-size: 11.5px; white-space: nowrap; }
