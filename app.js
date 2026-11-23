@@ -5,7 +5,7 @@
  *   the cover     the four benches on one thread, the Student | Teacher switch, the bar (share, sound, language);
  *                 in a desktop's window placed by gui/cover.py's numbers (arrangeCover, its page's air tightened where
  *                 the cards would not hold the first screen: PAGE_TIGHT), larger past full HD; a passed card's check
- *                 after its name; the title's column in its own order, on purpose: the alpha's mark, title, lead, then
+ *                 after its name; the title's column in its own order, on purpose: the version's mark, title, lead, then
  *                 the switch (the desktop puts the switch first; a visitor of the site reads what it is before choosing
  *                 a mode)
  *   a bench       the bar (Home, the bench's name and its check once passed, the pills of its steps), the column of the
@@ -656,7 +656,7 @@
     const restart = el("button", { class: "quiet-button restart", type: "button", onclick: confirmRestart,
                                    style: cover.restart ? null : "visibility:hidden" }, cover.restart_texts.command);
     setTip(restart, cover.restart_texts.tip);
-    // the alpha's mark over the title: a label, not a control; the version as the build computed it, never typed in a text
+    // the version's mark over the title: a label, not a control; the version as the build computed it, never typed in a text
     const edition = el("p", { class: "edition" }, el("span", { class: "edition-name" }, cover.edition), " ",
                        el("span", { class: "edition-version" }, cover.version || document.body.dataset.version));
     const lede = el("section", { class: "lede" }, edition, el("h1", { class: "cover-title" }, cover.title),

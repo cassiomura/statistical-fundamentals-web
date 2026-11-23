@@ -1,6 +1,6 @@
 /*
  * Statistical Fundamentals, the web version: the look of the page, the desktop's (gui/style.py; the cover's places
- * from gui/cover.py, its order not: here the alpha's mark, title, lead, then the Student | Teacher switch, where the desktop puts
+ * from gui/cover.py, its order not: here the version's mark, title, lead, then the Student | Teacher switch, where the desktop puts
  * the switch first, on purpose: a visitor of the site reads what the laboratory is before choosing a mode): the
  * product's slate and cyan, the hues of manim one meaning each, surfaces told apart by tone and a quiet depth (a 1 px
  * light on a card's top edge, a soft shadow under it), generous spacing, a value's state in one colour and weight
@@ -12,20 +12,20 @@
  * the sheet, the measures, shared), `.portrait` or `.compact` (landscape) for where they stand; its bar is
  * `.bar.in-bench.phone`; touch targets are 44 px, 8 px apart: the phone's part, at the end, is kept as it is.
  */
-@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=00d22183898f") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=00d22183898f") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=00d22183898f") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawk.woff2?v=736eab0c0b2d") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawksb.woff2?v=736eab0c0b2d") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Selawik"; src: url("fonts/selawkb.woff2?v=736eab0c0b2d") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 /* the glyphs Selawik lacks (Greek, subscripts, the minus sign, arrows): DejaVu's, as the figure draws them, the
    subscripts lowered under the baseline (build.lower_subscripts); every address stamped ?v=BUILD by web/build.py, the
    preload of index.html the same address */
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=00d22183898f") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=00d22183898f") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Symbols"; src: url("fonts/symbols-bold.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
 /* the problem card's serif: matplotlib's own STIXGeneral (regular, italic, bold, bold italic), cut by web/build.py to the
    glyphs the problems of the benches write (build.serif_characters), its licence beside it (fonts/LICENSE_STIX.txt) */
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif.ttf?v=00d22183898f") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif-italic.ttf?v=00d22183898f") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold.ttf?v=00d22183898f") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
-@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold-italic.ttf?v=00d22183898f") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-italic.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: "Lab Serif"; src: url("fonts/serif-bold-italic.ttf?v=736eab0c0b2d") format("truetype"); font-weight: 700; font-style: italic; font-display: swap; }
 
 :root {
   --window: var(--theme-deep);
@@ -221,9 +221,9 @@ body.busy { cursor: progress; }
 .cover { flex: 1; overflow-y: auto; background: var(--surface); display: flex; scrollbar-width: thin; scrollbar-color: var(--pill) transparent;
          padding: 40px max(24px, env(safe-area-inset-right)) 40px max(24px, env(safe-area-inset-left)); }
 .cover-inner { flex: 1; min-width: 0; display: flex; gap: 56px; justify-content: center; margin: auto; }
-/* the title's column: the alpha's mark, title, lead, then the Student | Teacher switch with its line, then Restart */
+/* the title's column: the version's mark, title, lead, then the Student | Teacher switch with its line, then Restart */
 .lede { flex: 0 1 380px; min-width: 300px; display: flex; flex-direction: column; align-items: flex-start; padding-top: 12px; }
-/* the alpha's mark: a quiet pill, a label and not a control (no hover, no focus); its name in the accent, the version
+/* the version's mark: a quiet pill, a label and not a control (no hover, no focus); its name in the accent, the version
    after it in the muted ink and tabular figures */
 .edition { margin: 0 0 14px; padding: 3px 11px 4px; border-radius: var(--radius-round); white-space: nowrap;
            border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent); background: color-mix(in srgb, var(--accent) 7%, transparent);
